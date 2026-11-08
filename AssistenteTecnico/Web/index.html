@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Assistente Tecnico</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Assistente">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#eef0ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141a1f" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: una sola colonna — scheda di intervento, risultato, cronologia */
+:root{
+  --bg:#eef0ec; --surface:#fbfcf9; --ink:#1d2a33; --muted:#5b6872; --line:#cfd5cf;
+  --accent:#1f5f8b; --accent-ink:#fff; --tag:#f2c230;
+  --ok:#2e7d4f; --ok-bg:#e5f3ea; --warn:#b7791f; --warn-bg:#fdf3dc; --crit:#b3261e; --crit-bg:#fbe9e7;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",-apple-system,system-ui,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+  /* barra di stato e indicatore Home dell'iPhone */
+  padding-top:env(safe-area-inset-top,0px);
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#141a1f; --surface:#1c242a; --ink:#e6ebe7; --muted:#9aa6ae; --line:#2f3a42;
+  --accent:#6fb0de; --accent-ink:#0d1a24; --tag:#e8b923;
+  --ok:#6cc58f; --ok-bg:#17301f; --warn:#e3a94a; --warn-bg:#352a14; --crit:#f2867c; --crit-bg:#3a1d1a; color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
+img{max-width:100%}
+button,input,textarea,label{touch-action:manipulation}
+button{-webkit-user-select:none;user-select:none}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:18px calc(40px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+h1{font-size:2.2rem;font-weight:800;text-transform:uppercase;line-height:1;border-bottom:3px solid var(--ink);padding-bottom:8px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.label{font:500 .72rem/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:4px;font:700 1.08rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.05em;padding:14px 16px;min-height:48px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.ok{background:var(--ok);color:var(--accent-ink)}
+.btn.small{font-size:.95rem;padding:10px 14px;min-height:44px}
+.btn[disabled]{opacity:.5}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input[type=text],input[type=password]{width:100%;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);padding:11px 12px;-webkit-appearance:none;appearance:none}
+input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.link{background:none;border:0;color:var(--accent);font:500 .95rem var(--f-body);padding:10px 0;min-height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:flex-start;text-align:left}
+textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);padding:10px 12px;resize:vertical;-webkit-appearance:none;appearance:none}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumb{position:relative;width:76px;height:76px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;top:2px;right:2px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:17px;line-height:32px;padding:0;cursor:pointer}
+.status{font:500 .85rem/1.4 var(--f-mono);color:var(--muted);margin:0}
+.status:empty{display:none}
+.note{margin:0;font-size:.85rem;color:var(--muted)}
+.pill{font:500 .68rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.07em;padding:5px 7px;border-radius:3px;border:1px solid currentColor;white-space:nowrap}
+.pill.risolto,.pill.basso{color:var(--ok);background:var(--ok-bg)}
+.pill.aperto,.pill.medio{color:var(--warn);background:var(--warn-bg)}
+.pill.alto,.pill.critico{color:var(--crit);background:var(--crit-bg)}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:8px}
+#res h2{font-size:1.8rem;font-weight:800;line-height:1.05}
+#res p{margin:0}
+.safety{border-left:4px solid var(--crit);background:var(--crit-bg);padding:10px 12px;border-radius:2px}
+.safety.medio{border-color:var(--warn);background:var(--warn-bg)}
+.safety.basso{border-color:var(--ok);background:var(--ok-bg)}
+.safety b{display:block;margin-bottom:2px}
+h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
+ol.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+ol.steps li::marker{font:800 1.05rem var(--f-display);color:var(--accent)}
+.learn{background:var(--ink);color:var(--bg);border-radius:4px;padding:12px 14px}
+.learn .label{color:var(--tag)}
+.real{border:2px solid var(--ok);background:var(--ok-bg);border-radius:4px;padding:10px 12px}
+.real p{white-space:pre-wrap}
+.hist{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:56px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:11px 12px;cursor:pointer;font:inherit}
+.item div{min-width:0}
+.item b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item span.sub{display:block;font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--muted);text-align:center;padding:18px;border:2px dashed var(--line);border-radius:6px}
+/* indicatori di stato: pallino con ✓ / ✗ / ! */
+.check{display:flex;align-items:center;gap:10px;font:500 .92rem/1.35 var(--f-body);color:var(--ink);background:none;border:0;padding:4px 0;margin:0;text-align:left;width:100%}
+button.check{min-height:44px;cursor:pointer}
+.check .dot{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 var(--f-body);color:var(--surface);background:var(--muted)}
+.check.ok .dot{background:var(--ok)}
+.check.err .dot{background:var(--crit)}
+.check.warn .dot,.check.wait .dot{background:var(--warn)}
+.check.err{color:var(--crit)}
+.check.wait .dot{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.check.wait .dot{animation:none}}
+.errlist{margin:0;padding-left:32px;font-size:.85rem;color:var(--crit);display:flex;flex-direction:column;gap:2px}
+.thumb .badge{position:absolute;left:4px;bottom:4px;width:22px;height:22px;border-radius:50%;background:var(--ok);color:var(--surface);display:grid;place-items:center;font:700 13px/1 var(--f-body);box-shadow:0 0 0 2px var(--surface)}
+.thumb.vid{background:#000;display:grid;place-items:center}
+.thumb .play{color:#fff;font-size:1.6rem}
+.thumb .dur{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.7);color:#fff;font:500 .68rem/1 var(--f-mono);padding:3px 5px;border-radius:3px}
+.thumb.bad{border:2px solid var(--crit);background:var(--crit-bg);display:grid;place-items:center;color:var(--crit);font:700 1.7rem/1 var(--f-body)}
+.diag{border:1px solid var(--line);border-radius:4px;padding:0 12px;background:var(--bg)}
+.diag summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:500 .78rem/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.diag[open]{padding-bottom:4px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 4px;font-size:.85rem}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:.8rem}
+/* barra in fondo: cosa sta facendo l'app (sempre visibile mentre lavora) */
+.workbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--warn-bg);border-top:2px solid var(--warn);box-shadow:0 -6px 18px rgba(0,0,0,.12);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.workbar .in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.workbar .check{flex:1;min-width:0;padding:0}
+.workbar .btn{flex:none}
+body.lavora{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+.verdict{border:2px solid var(--accent);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
+.verdict h2{font-size:1.6rem!important}
+.pill.conc-alta{color:var(--ok);background:var(--ok-bg)}
+.pill.conc-media{color:var(--warn);background:var(--warn-bg)}
+.pill.conc-bassa{color:var(--crit);background:var(--crit-bg)}
+ul.plain{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px}
+ul.warnlist li::marker{color:var(--warn)}
+.ops{display:flex;flex-direction:column;gap:10px;padding-bottom:10px}
+.op{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--line);padding-left:10px}
+.op p{margin:0}
+.confirm{border-top:1px solid var(--line);padding-top:12px}
+.hint{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tag);border-radius:4px;padding:10px 12px;font-size:.9rem}
+.hint p{margin:0;flex:1}
+.hint button{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;width:44px;height:44px;margin:-10px -12px -10px 0;cursor:pointer}
+@media (max-width:420px){h1{font-size:1.9rem}}
+.main,.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+/* iPad e schermi larghi: lavoro a sinistra, cronologia sempre visibile a destra */
+@media (min-width:860px){
+  .wrap{max-width:1120px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:start;gap:20px}
+  h1,.hint{grid-column:1/-1}
+  h1{font-size:2.6rem}
+  .side{position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
+  .hist{max-height:calc(100vh - 220px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:2px}
+  .thumb{width:96px;height:96px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Assistente Tecnico</h1>
+
+  <div class="hint" id="hint" hidden>
+    <p>Per usarla come un'app e non perdere l'archivio: tocca <b>Condividi</b> in Safari, poi <b>Aggiungi alla schermata Home</b>.</p>
+    <button type="button" id="hint-x" aria-label="Chiudi">×</button>
+  </div>
+
+  <div class="main">
+  <div class="panel">
+    <div class="row">
+      <button class="btn ghost" type="button" id="b-foto">Foto</button>
+      <button class="btn ghost" type="button" id="b-video">Video</button>
+    </div>
+    <input type="file" id="in-foto" accept="image/*" multiple hidden>
+    <input type="file" id="in-video" accept="video/*" hidden>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="stack" id="media-box" hidden>
+      <p class="check" id="media-st" aria-live="polite"></p>
+      <ul class="errlist" id="media-err"></ul>
+    </div>
+    <textarea id="desc" aria-label="Descrivi il problema" placeholder="Descrivi il problema: cosa fa, da quando, misure, codici di errore, LED accesi (es. switch, server, PLC)."></textarea>
+    <button class="check" type="button" id="gem-st" aria-live="polite"></button>
+    <details class="diag" id="diag" hidden>
+      <summary>Dettagli del problema</summary>
+      <dl class="kv" id="diag-kv"></dl>
+      <button class="link" type="button" id="diag-copy">Copia i dettagli</button>
+    </details>
+    <button class="btn" type="button" id="go">Analizza</button>
+    <div class="status" id="st" aria-live="polite"></div>
+    <button class="link" type="button" id="b-man">L'analisi non trova il problema? Registralo a mano</button>
+    <div class="stack" id="man" hidden>
+      <div class="label">Registrazione manuale</div>
+      <input type="text" id="m-tit" aria-label="Problema" placeholder="Problema (es. Pompa 2 non parte)">
+      <textarea id="m-sol" aria-label="Soluzione" placeholder="Cosa hai fatto per risolverlo?" style="min-height:80px"></textarea>
+      <p class="note">Foto e descrizione inserite sopra vengono salvate insieme.</p>
+      <div class="meta"><button class="btn ok small" type="button" id="m-save">Salva in archivio</button><button class="btn ghost small" type="button" id="m-cancel">Annulla</button></div>
+    </div>
+  </div>
+
+  <div class="panel" id="res" hidden></div>
+  </div>
+
+  <aside class="side">
+  <div class="panel">
+    <div class="label">Cronologia</div>
+    <p class="status" id="sync"></p>
+    <div class="hist" id="hist"></div>
+    <div class="meta" style="border-top:1px solid var(--line);padding-top:6px;column-gap:18px">
+      <button class="link" type="button" id="exp">Esporta archivio</button>
+      <button class="link" type="button" id="imp">Importa archivio</button>
+      <button class="link" type="button" id="b-key">Chiavi per l'analisi</button>
+      <input type="file" id="in-imp" accept="application/json,.json" hidden>
+    </div>
+    <div class="stack" id="keybox" hidden>
+      <label class="label" for="key">Chiave Google Gemini</label>
+      <input type="password" id="key" placeholder="Incolla la chiave (inizia con AIza…)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="note">Serve per il tasto Analizza. La crei gratis su aistudio.google.com › Get API key. Resta salvata solo su questo iPhone.</p>
+      <p class="check" id="key-st"></p>
+      <div class="meta"><button class="btn ok small" type="button" id="key-save">Salva e verifica</button><button class="btn ghost small" type="button" id="key-test">Verifica di nuovo</button><button class="btn ghost small" type="button" id="key-del">Rimuovi</button></div>
+
+      <label class="label" for="orkey" style="margin-top:14px">Riserva gratuita: OpenRouter</label>
+      <input type="password" id="orkey" placeholder="Incolla la chiave (inizia con sk-or-…)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="note">Si usa da sola quando Gemini non risponde. Gratis, circa 50 analisi al giorno: crea un account su openrouter.ai › Keys › Create Key. Legge solo immagini: di un video usa alcuni fotogrammi, senza audio. Non inviare foto con dati riservati.</p>
+      <p class="check" id="or-st"></p>
+      <div class="meta"><button class="btn ok small" type="button" id="or-save">Salva e verifica</button><button class="btn ghost small" type="button" id="or-del">Rimuovi</button></div>
+    </div>
+  </div>
+  </aside>
+</div>
+
+<div class="workbar" id="work" hidden>
+  <div class="in">
+    <p class="check wait" id="work-st" role="status" aria-live="polite"></p>
+    <button class="btn ghost small" type="button" id="stop" hidden>Annulla</button>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const el = (t, p = {}, kids = []) => { const n = document.createElement(t);
+  for (const [k, v] of Object.entries(p)) { if (v == null) continue; if (k === "text") n.textContent = v; else if (k === "class") n.className = v; else if (k.startsWith("on")) n[k] = v; else n.setAttribute(k, v); }
+  for (const k of [].concat(kids)) if (k != null && k !== false) n.append(k); return n; };
+const str = v => v == null ? "" : String(v);
+const arr = v => Array.isArray(v) ? v.filter(Boolean) : [];
+const fill = (n, ...k) => n.replaceChildren(...k.filter(x => x != null && x !== false && x !== ""));
+const data = t => new Date(t).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
+const LS = { get: k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }, del: k => { try { localStorage.removeItem(k); } catch {} } };
+const sync = t => { $("#sync").textContent = t; };
+
+/* app iOS nativa: le richieste di rete passano dall'app (niente blocchi CORS, continuano qualche secondo anche fuori dall'app) */
+const NATIVA = !!window.__NATIVE_IOS__ && !!window.webkit?.messageHandlers?.native;
+const nativo = msg => window.webkit.messageHandlers.native.postMessage(msg);
+const attesiHTTP = new Map();
+window.__nativeHTTPProgress = (id, f) => attesiHTTP.get(id)?.prog(f);
+window.__nativeHTTPDone = (id, r) => attesiHTTP.get(id)?.done(r || { error: "rete" });
+function httpNativo(url, { method = "GET", headers = {}, body = null, timeout = 30000 } = {}, onProg) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const p = new Promise(res => attesiHTTP.set(id, { prog: f => onProg && onProg(f), done: r => { attesiHTTP.delete(id); res(r); } }));
+  nativo({ action: "http", id, url, method, headers, body, timeout });
+  return { p, abort: () => nativo({ action: "httpCancel", id }) };
+}
+// GET con limite di tempo: dall'app nativa o con fetch nel browser. Errore "timeout" o "rete".
+async function richiesta(url, headers = {}, timeout = 15000) {
+  if (NATIVA) {
+    const r = await httpNativo(url, { headers, timeout }).p;
+    if (r.error) throw new Error(r.error === "tempo" ? "timeout" : "rete");
+    return { status: r.status, ok: r.status >= 200 && r.status < 300, json: async () => JSON.parse(r.text) };
+  }
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), timeout);
+  try { return await fetch(url, { headers, signal: ac.signal }); }
+  catch { throw new Error(ac.signal.aborted ? "timeout" : "rete"); }
+  finally { clearTimeout(tm); }
+}
+
+/* archivio sull'iPhone (IndexedDB) */
+const DB = (() => {
+  let mem = null;
+  const open = new Promise(res => { try { const r = indexedDB.open("assistente-tecnico-semplice", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("casi", { keyPath: "id" });
+    r.onsuccess = () => res(r.result); r.onerror = () => { mem = new Map(); res(null); }; } catch { mem = new Map(); res(null); } });
+  const req = r => new Promise((ok, ko) => { r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
+  return {
+    get volatile() { return !!mem; },
+    async all() { const d = await open; const v = d ? await req(d.transaction("casi").objectStore("casi").getAll()) : [...mem.values()]; return v.sort((a, b) => b.creato - a.creato); },
+    async put(c) { const d = await open; if (!d) return mem.set(c.id, c); return req(d.transaction("casi", "readwrite").objectStore("casi").put(c)); },
+    async del(id) { const d = await open; if (!d) return mem.delete(id); return req(d.transaction("casi", "readwrite").objectStore("casi").delete(id)); },
+  };
+})();
+try { navigator.storage?.persist?.(); } catch {}
+
+/* suggerimento "Aggiungi alla schermata Home" (Safari cancella i dati dei siti non usati da 7 giorni; le app nella Home no) */
+const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (ios && !standalone && !NATIVA && !LS.get("at-hint")) $("#hint").hidden = false;
+$("#hint-x").onclick = () => { $("#hint").hidden = true; LS.set("at-hint", "1"); };
+
+/* indicatore a pallino: ok ✓ · err ✗ · warn ! · wait (lampeggia) · off – */
+const GLIFO = { ok: "✓", err: "✗", warn: "!", wait: "", off: "–" };
+function setCheck(n, stato, testo) { n.className = "check " + stato; n.replaceChildren(el("span", { class: "dot", "aria-hidden": "true", text: GLIFO[stato] }), el("span", { text: testo })); }
+// barra in fondo allo schermo: mostra il lavoro in corso, sparisce quando ha finito
+function lavoro(testo, annullabile) { $("#work").hidden = false; document.body.classList.add("lavora"); setCheck($("#work-st"), "wait", testo); if (annullabile != null) $("#stop").hidden = !annullabile; }
+function fineLavoro() { if (lavori || invii.size || confronto || $("#go").disabled) return; $("#work").hidden = true; document.body.classList.remove("lavora"); $("#stop").hidden = true; }
+
+/* foto e video */
+let foto = [];          // immagini pronte e verificate: { src, nome }
+let video = null;       // video pronto e verificato: { file, url, nome, mime, durata, poster }
+let scarti = [];        // file non caricati: { nome, motivo }
+let lavori = 0;         // caricamenti in corso
+const MAXIMG = 6;
+// Gemini accetta circa 20 MB per richiesta; il video viene codificato (+33%), quindi il file originale deve stare sotto ~14 MB
+const MAXREQ = 19e6;
+const MB = n => (n / 1e6).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " MB";
+const durata = s => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0");
+const pesoFoto = () => foto.reduce((t, f) => t + f.src.length, 0);
+const maxVideo = () => Math.max(0, Math.floor((MAXREQ - pesoFoto() - 50000) * 0.75));
+$("#b-foto").onclick = () => $("#in-foto").click();
+$("#b-video").onclick = () => $("#in-video").click();
+function jpeg(src, w, h, max) { const k = Math.min(1, max / Math.max(w, h)); const c = document.createElement("canvas");
+  c.width = Math.round(w * k); c.height = Math.round(h * k); c.getContext("2d").drawImage(src, 0, 0, c.width, c.height); return c.toDataURL("image/jpeg", .82); }
+// controlla che l'immagine prodotta sia valida e non vuota (su iPhone a volte un fotogramma esce tutto nero)
+function verifica(src, w, h) {
+  if (!w || !h) return { err: "dimensioni non valide" };
+  const d = jpeg(src, w, h, 1568);
+  if (!d.startsWith("data:image/jpeg") || d.length < 1500) return { err: "immagine vuota o danneggiata" };
+  const c = document.createElement("canvas"); c.width = c.height = 16; const x = c.getContext("2d"); x.drawImage(src, 0, 0, 16, 16);
+  const px = x.getImageData(0, 0, 16, 16).data; let lo = 255, hi = 0;
+  for (let i = 0; i < px.length; i += 4) { const l = (px[i] * 3 + px[i + 1] * 6 + px[i + 2]) / 10; if (l < lo) lo = l; if (l > hi) hi = l; }
+  if (hi - lo < 6) return { err: hi < 20 ? "immagine tutta nera" : "immagine uniforme, senza dettagli" };
+  return { src: d };
+}
+function add(src, nome) {
+  if (foto.length >= MAXIMG) { scarti.push({ nome, motivo: `oltre il massimo di ${MAXIMG} foto` }); return false; }
+  if (video && pesoFoto() + src.length + video.file.size * 1.34 > MAXREQ) { scarti.push({ nome, motivo: "non c'è più spazio insieme a questo video: togli il video o qualche foto" }); return false; }
+  foto.push({ src, nome }); return true; }
+function thumbs() {
+  $("#thumbs").replaceChildren(
+    ...(video ? [el("div", { class: "thumb vid" }, [
+      video.poster ? el("img", { src: video.poster, alt: video.nome }) : el("span", { class: "play", text: "▶" }),
+      el("span", { class: "dur", text: "▶ " + durata(video.durata) }),
+      el("span", { class: "badge", "aria-label": "Video caricato correttamente", text: "✓" }),
+      el("button", { type: "button", "aria-label": "Rimuovi il video", text: "×", onclick: () => { URL.revokeObjectURL(video.url); video = null; mediaUI(); } })])] : []),
+    ...foto.map((f, i) => el("div", { class: "thumb" }, [el("img", { src: f.src, alt: f.nome }),
+      el("span", { class: "badge", "aria-label": "Caricata correttamente", text: "✓" }),
+      el("button", { type: "button", "aria-label": "Rimuovi " + f.nome, text: "×", onclick: () => { foto.splice(i, 1); mediaUI(); } })])),
+    ...scarti.map((s, i) => el("div", { class: "thumb bad", title: s.motivo }, [el("span", { "aria-label": "Non caricato: " + s.nome, text: "✗" }),
+      el("button", { type: "button", "aria-label": "Togli l'avviso", text: "×", onclick: () => { scarti.splice(i, 1); mediaUI(); } })])));
+}
+function cosa() {   // "1 video (0:12, 8,4 MB) e 2 foto"
+  const p = [];
+  if (video) p.push(`1 video (${durata(video.durata)}, ${MB(video.file.size)})`);
+  if (foto.length) p.push(`${foto.length} foto`);
+  return p.join(" e ");
+}
+function mediaUI(attesa) {
+  thumbs();
+  const n = foto.length + (video ? 1 : 0), e = scarti.length, box = $("#media-box");
+  box.hidden = !n && !e;
+  if (attesa) lavoro(attesa, false); else fineLavoro();
+  if (!n && !e) {}
+  else if (e && n) setCheck($("#media-st"), "warn", `Pronti: ${cosa()}. ${e} file non ${e > 1 ? "caricati" : "caricato"}`);
+  else if (e) setCheck($("#media-st"), "err", e > 1 ? `${e} file non caricati` : "File non caricato");
+  else if (n) setCheck($("#media-st"), "ok", `${cosa()}: ${n > 1 ? "caricati" : video ? "caricato" : "caricata"} correttamente, nessun errore`);
+  $("#media-err").replaceChildren(...scarti.map(s => el("li", { text: `${s.nome}: ${s.motivo}` })));
+}
+const nomeBreve = s => s.length > 28 ? s.slice(0, 12) + "…" + s.slice(-12) : s;
+// URL temporaneo invece di base64: più leggero in memoria su iPhone, e legge anche le foto HEIC
+const loadImg = f => new Promise((ok, ko) => { const u = URL.createObjectURL(f); const i = new Image();
+  i.onload = () => { ok(i); setTimeout(() => URL.revokeObjectURL(u), 0); }; i.onerror = () => { URL.revokeObjectURL(u); ko(); }; i.src = u; });
+$("#in-foto").onchange = async e => {
+  const files = [...e.target.files]; e.target.value = ""; if (!files.length) return;
+  lavori++;
+  for (const [k, f] of files.entries()) {
+    const nome = nomeBreve(f.name || `foto ${k + 1}`);
+    mediaUI(`Carico e controllo ${files.length > 1 ? `la foto ${k + 1} di ${files.length}` : "la foto"}…`);
+    if (f.type && !f.type.startsWith("image/")) { scarti.push({ nome, motivo: "non è un'immagine" }); continue; }
+    if (f.size > 40e6) { scarti.push({ nome, motivo: "file troppo grande (oltre 40 MB)" }); continue; }
+    try { const i = await loadImg(f); const v = verifica(i, i.naturalWidth, i.naturalHeight);
+      if (v.err) scarti.push({ nome, motivo: v.err }); else add(v.src, nome); }
+    catch { scarti.push({ nome, motivo: "formato non leggibile (prova Impostazioni › Fotocamera › Formati › Più compatibile)" }); }
+  }
+  lavori--; mediaUI();
+};
+// tipo del video nel formato che Gemini riconosce (l'iPhone registra in .MOV)
+function tipoVideo(f) {
+  const t = (f.type || "").toLowerCase(), ext = (f.name || "").split(".").pop().toLowerCase();
+  if (t === "video/quicktime" || ext === "mov") return "video/mov";
+  if (t === "video/mp4" || ext === "mp4" || ext === "m4v") return "video/mp4";
+  if (t === "video/webm" || ext === "webm") return "video/webm";
+  if (t === "video/3gpp" || ext === "3gp") return "video/3gpp";
+  return t.startsWith("video/") ? t : "";
+}
+$("#in-video").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const nome = nomeBreve(f.name || "video"), mime = tipoVideo(f);
+  if (!mime) { scarti.push({ nome, motivo: "non è un video in un formato riconosciuto (MOV, MP4)" }); mediaUI(); return; }
+  if (f.size > maxVideo()) {
+    scarti.push({ nome, motivo: `video troppo pesante (${MB(f.size)}): il massimo è ${MB(maxVideo())}${foto.length ? " con le foto già caricate" : ""}, circa 10–15 secondi. Accorcialo nell'app Foto con Modifica` });
+    mediaUI(); return;
+  }
+  lavori++; mediaUI("Apro e controllo il video…");
+  const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.setAttribute("webkit-playsinline", ""); v.preload = "auto";
+  const url = URL.createObjectURL(f); v.src = url;
+  let ok = false;
+  try {
+    v.load(); await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = rej; setTimeout(() => v.readyState >= 2 ? res() : rej(), 15000); });
+    const d = v.duration;
+    if (!isFinite(d) || d <= 0 || !v.videoWidth) throw 0;
+    // immagine di anteprima dal primo secondo (solo per la miniatura e l'archivio)
+    let poster = "";
+    try { try { await v.play(); v.pause(); } catch {}
+      await new Promise(res => { const fin = () => { v.removeEventListener("seeked", fin); res(); }; v.addEventListener("seeked", fin); v.currentTime = Math.min(1, d / 2); setTimeout(fin, 3000); });
+      poster = jpeg(v, v.videoWidth, v.videoHeight, 600); } catch {}
+    if (video) URL.revokeObjectURL(video.url);
+    video = { file: f, url, nome, mime, durata: d, poster };
+    ok = true;
+  } catch { scarti.push({ nome, motivo: "video non leggibile o danneggiato: prova a registrarlo di nuovo" }); }
+  finally { if (!ok) URL.revokeObjectURL(url); lavori--; mediaUI(); }
+};
+const leggiBase64 = f => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = () => ko(); r.readAsDataURL(f); });
+
+/* analisi (Google Gemini) */
+const PROMPT = (desc, n, vid) => `Sei un tecnico manutentore esperto in: informatica; reti e infrastrutture IT come switch, router, firewall, server, NAS, Wi-Fi, cablaggio e fibra; automazione industriale come PLC, HMI, SCADA, inverter e bus di campo (Profinet, Profibus, Modbus, EtherNet/IP); elettrica; elettronica; idraulica; impianti di processo. Un collega ti mostra un guasto${vid ? " in un video allegato" + (n ? ` e in ${n} foto` : "") : n ? " nelle foto allegate" : ""}.
+${vid ? "Nel video osserva movimenti, vibrazioni, perdite, scintille, spie e display, e ASCOLTA l'audio: ronzii, sfrigolii, fischi, colpi, rumori di cuscinetti o cavitazione sono indizi importanti. Cita nella diagnosi cosa hai visto e sentito e in quale momento del video.\n" : ""}Descrizione: ${desc || "nessuna, basati su ciò che vedi e senti"}
+
+Per reti, server e PLC leggi con attenzione LED di stato (link, attività, PoE, errore, RUN/STOP), etichette delle porte, display, codici di errore e schermate di log o diagnostica, e suggerisci comandi o controlli concreti (ping, stato porta, VLAN, indirizzi IP, buffer diagnostico del PLC).
+Dai una diagnosi chiara e semplice, in italiano. La sicurezza viene prima: mai suggerire di lavorare sotto tensione o di escludere protezioni; se serve un tecnico abilitato, dillo. Per reti, server e PLC valuta l'impatto sul servizio e sull'impianto prima di riavvii, modifiche di configurazione o forzature: consiglia di salvare prima la configurazione o il programma, e di non forzare ingressi/uscite o modificare il programma del PLC con l'impianto in marcia senza autorizzazione.
+Rispondi SOLO con JSON:
+{"titolo":"nome breve del problema","problema":"2-3 frasi su cosa sta succedendo","rischio":"basso"|"medio"|"alto"|"critico","sicurezza":"precauzioni prima di intervenire, 1-2 frasi","causa":"causa più probabile e perché","soluzione":["passo 1","passo 2","..."],"impara":"il principio tecnico da capire, 2-3 frasi"}`;
+const KEY = () => LS.get("at-key");
+const API = "https://generativelanguage.googleapis.com/v1beta/";
+const CHIAVE_KO = "Chiave Gemini non valida: tocca qui per controllarla";
+const pausa = ms => new Promise(r => setTimeout(r, ms));
+// modelli Gemini adatti, dal più recente: prima i Flash, poi i Flash-Lite (meno richiesti: utili se gli altri sono sovraccarichi)
+async function modelli(forza) {
+  if (!forza) { try { const s = JSON.parse(LS.get("at-models") || "null"); if (Array.isArray(s) && s.length) return s; } catch {} }
+  let r;
+  try { r = await richiesta(API + "models?pageSize=200", { "x-goog-api-key": KEY() }, 15000); }
+  catch (e) { throw e?.message === "timeout" ? "Gemini non risponde (15 s): connessione lenta o servizio irraggiungibile" : "Gemini non raggiungibile: controlla la connessione"; }
+  if ([400, 401, 403].includes(r.status)) throw CHIAVE_KO;
+  if (r.status === 429) throw "Limite gratuito di Gemini raggiunto per ora: riprova più tardi";
+  if (!r.ok) throw `Servizio Gemini non disponibile (errore ${r.status}): riprova più tardi`;
+  let j; try { j = await r.json(); } catch { throw "Risposta di Gemini non leggibile: riprova"; }
+  const nomi = arr(j.models).filter(m => m.supportedGenerationMethods?.includes("generateContent")).map(m => m.name.replace("models/", ""));
+  const lista = nomi.map(n => ({ n, m: n.match(/^gemini-(\d+(?:\.\d+)?)-flash(-lite)?$/) })).filter(x => x.m)
+    .sort((x, y) => (x.m[2] ? 1 : 0) - (y.m[2] ? 1 : 0) || parseFloat(y.m[1]) - parseFloat(x.m[1])).map(x => x.n);
+  if (!lista.length && nomi.includes("gemini-flash-latest")) lista.push("gemini-flash-latest");
+  if (!lista.length) throw "Nessun modello Gemini adatto disponibile per questa chiave";
+  LS.set("at-models", JSON.stringify(lista.slice(0, 4))); return lista.slice(0, 4);
+}
+const modello = async forza => (await modelli(forza))[0];
+
+/* invio: avanzamento, limite di tempo e diagnosi di cosa è andato storto */
+// altroModello: conviene provare un altro modello Gemini · riserva: conviene provare OpenRouter
+class Problema { constructor(msg, det = {}, op = {}) { this.msg = msg; this.det = det; this.altroModello = !!op.altroModello; this.riserva = op.riserva !== false; } }
+const invii = new Set();   // richieste in corso (il tasto Annulla le ferma tutte)
+let confronto = false;     // confronto tra più AI in corso
+let annullata = false;
+let sfondo = false;    // l'app è andata in secondo piano durante l'analisi (iOS sospende la connessione)
+document.addEventListener("visibilitychange", () => { if (document.hidden && invii.size) sfondo = true; });
+// XMLHttpRequest invece di fetch: permette di sapere quanta parte dei dati è già arrivata
+function inviaXHR(url, body, onFase, limite, headers) {
+  if (NATIVA) return new Promise((ok, ko) => {
+    const t0 = Date.now(); let fase = "invio", pct = 0, noto = false;
+    const stato = tipo => ({ fase, tipo, pct, noto, secondi: Math.round((Date.now() - t0) / 1000) });
+    const h = httpNativo(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body, timeout: limite }, f => {
+      noto = true;
+      if (f >= 1) { fase = "attesa"; pct = 100; } else pct = Math.min(99, Math.round(f * 100));
+      onFase(fase, pct);
+    });
+    const ctrl = { abort: h.abort }; invii.add(ctrl);
+    h.p.then(r => { invii.delete(ctrl); if (r.error) ko(stato(r.error)); else ok({ status: r.status, text: r.text, ...stato("ok") }); });
+  });
+  return new Promise((ok, ko) => {
+    const x = new XMLHttpRequest(), t0 = Date.now(); invii.add(x);
+    let fase = "invio", pct = 0, noto = false;   // noto: il telefono comunica l'avanzamento dell'invio
+    const stato = tipo => ({ fase, tipo, pct, noto, secondi: Math.round((Date.now() - t0) / 1000) });
+    x.open("POST", url);
+    x.setRequestHeader("content-type", "application/json");
+    for (const [k, v] of Object.entries(headers)) x.setRequestHeader(k, v);
+    x.timeout = limite;
+    x.upload.onprogress = e => { if (e.lengthComputable && fase === "invio") { noto = true; pct = Math.min(99, Math.round(e.loaded / e.total * 100)); onFase(fase, pct); } };
+    x.upload.onload = () => { noto = true; fase = "attesa"; pct = 100; onFase(fase, pct); };
+    x.onload = () => ok({ status: x.status, text: x.responseText, ...stato("ok") });
+    x.onerror = () => ko(stato("rete"));
+    x.ontimeout = () => ko(stato("tempo"));
+    x.onabort = () => ko(stato("annullato"));
+    x.send(body);
+    x.addEventListener("loadend", () => invii.delete(x));
+  });
+}
+function problemaRete(e, det, nome) {
+  const motivo = { rete: "connessione interrotta", tempo: "tempo scaduto", annullato: "annullata da te" }[e.tipo];
+  Object.assign(det, { fase: !e.noto && e.tipo !== "annullato" ? "invio o attesa della risposta (il telefono non indica l'avanzamento)" : e.fase === "invio" ? `invio dei dati (arrivato il ${e.pct}%)` : "attesa della risposta (dati inviati per intero)", motivo, secondi: e.secondi + " s" });
+  if (e.tipo === "annullato") return new Problema("Analisi annullata", det, { riserva: false });
+  if (sfondo) { det.sfondo = "sì"; return new Problema("L'app è andata in secondo piano durante l'analisi e l'iPhone ha interrotto la connessione. Riprova tenendo l'app aperta fino alla risposta", det, { riserva: false }); }
+  if (!navigator.onLine) return new Problema("Connessione persa durante l'analisi: riprova quando torna la rete", det, { riserva: false });
+  if (!e.noto) return new Problema(e.tipo === "tempo"
+    ? `Nessuna risposta da ${nome} entro ${e.secondi} s: connessione lenta o servizio sovraccarico`
+    : `Connessione con ${nome} interrotta durante l'analisi`, det);
+  if (e.tipo === "tempo") return new Problema(e.fase === "invio"
+    ? `Invio troppo lento: in ${e.secondi} s è arrivato solo il ${e.pct}% dei dati. Connessione debole: prova in Wi-Fi o con un video più corto`
+    : `I dati sono arrivati a ${nome}, ma non ha risposto entro ${e.secondi} s`, det);
+  return new Problema(e.fase === "invio"
+    ? `Connessione interrotta durante l'invio (arrivato il ${e.pct}%): riprova, meglio in Wi-Fi`
+    : `I dati sono arrivati, ma la connessione si è interrotta mentre ${nome} analizzava`, det);
+}
+// legge e controlla la risposta: deve essere una diagnosi completa
+function leggiDiagnosi(t, det, nome) {
+  if (!t.trim()) throw new Problema(`Risposta di ${nome} vuota`, det, { altroModello: true });
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  let out; try { out = JSON.parse(t.slice(a, b + 1)); } catch { det.testo = t.slice(0, 200); throw new Problema(`Risposta di ${nome} incompleta o non valida`, det, { altroModello: true }); }
+  if (!out || typeof out !== "object" || !out.titolo || !(out.causa || arr(out.soluzione).length)) { det.testo = t.slice(0, 200); throw new Problema(`Risposta di ${nome} incompleta`, det, { altroModello: true }); }
+  return out;
+}
+
+/* un tentativo con un modello Gemini (riceve video e audio) */
+async function gemini(m, body, limite, vid, onFase) {
+  const det = { servizio: "Gemini", modello: m, inviati: MB(body.length) + (vid ? ` (video ${vid.mime})` : ""), limite: limite / 1000 + " s" };
+  let r; try { r = await inviaXHR(API + "models/" + m + ":generateContent", body, onFase, limite, { "x-goog-api-key": KEY() }); } catch (e) { throw problemaRete(e, det, "Gemini"); }
+  Object.assign(det, { fase: "risposta di Gemini", http: r.status, secondi: r.secondi + " s" });
+  let j = null; try { j = JSON.parse(r.text); } catch {}
+  const gm = j?.error?.message || "";
+  if (gm) det.messaggio = gm.slice(0, 300);
+  if ([400, 401, 403].includes(r.status)) {
+    if (/key|api_key|permission/i.test(gm)) throw new Problema(CHIAVE_KO, det);
+    if (/size|payload|too large|exceed/i.test(gm)) throw new Problema("Video o foto troppo pesanti per Gemini: accorcia il video o togli qualche foto", det);
+    if (/video|mime|unsupported|format|process|decode/i.test(gm)) throw new Problema("Gemini non riesce a leggere questo video: prova a registrarlo di nuovo o usa delle foto", det);
+    throw new Problema("Gemini ha rifiutato la richiesta (vedi il messaggio nei dettagli)", det); }
+  if (r.status === 404) { LS.del("at-models"); throw new Problema(`Il modello ${m} non è più disponibile`, det, { altroModello: true }); }
+  if (r.status === 413) throw new Problema("Dati troppo pesanti per Gemini: accorcia il video o togli qualche foto", det);
+  if (r.status === 429) throw new Problema(`Limite gratuito di ${m} raggiunto per ora`, det, { altroModello: true });
+  if (r.status >= 500) throw new Problema(`Gemini è sovraccarico o ha un guasto temporaneo (errore ${r.status})`, det, { altroModello: true });
+  if (r.status !== 200 || !j) throw new Problema(`Risposta inattesa da Gemini (errore ${r.status || "sconosciuto"})`, det, { altroModello: true });
+  if (j.promptFeedback?.blockReason) { det.blocco = j.promptFeedback.blockReason; throw new Problema("Gemini ha bloccato la richiesta per i suoi filtri: riformula la descrizione", det, { riserva: false }); }
+  const cand = j.candidates?.[0];
+  if (!cand) throw new Problema("Gemini non ha dato risposta", det, { altroModello: true });
+  det.fine = cand.finishReason || "";
+  if (cand.finishReason === "SAFETY") throw new Problema("Gemini ha bloccato la risposta per i suoi filtri: riformula la descrizione", det, { riserva: false });
+  if (cand.finishReason === "MAX_TOKENS") throw new Problema("Risposta di Gemini incompleta", det, { altroModello: true });
+  return leggiDiagnosi(arr(cand.content?.parts).map(p => p.text || "").join(""), det, "Gemini");
+}
+
+/* riserva gratuita: OpenRouter (solo immagini; di un video invia alcuni fotogrammi) */
+const OR_API = "https://openrouter.ai/api/v1/";
+const ORKEY = () => LS.get("at-orkey");
+async function estraiFotogrammi(file, n) {
+  const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.setAttribute("webkit-playsinline", ""); v.preload = "auto";
+  const url = URL.createObjectURL(file); v.src = url; const out = [];
+  try {
+    v.load(); await new Promise((ok, ko) => { v.onloadeddata = ok; v.onerror = ko; setTimeout(() => v.readyState >= 2 ? ok() : ko(), 12000); });
+    try { await v.play(); v.pause(); } catch {}
+    const d = isFinite(v.duration) && v.duration > 0 ? v.duration : 1;
+    for (let i = 1; i <= n; i++) {
+      await new Promise(ok => { const fin = () => { v.removeEventListener("seeked", fin); ok(); }; v.addEventListener("seeked", fin); v.currentTime = d * i / (n + 1); setTimeout(fin, 3000); });
+      const r = v.videoWidth ? verifica(v, v.videoWidth, v.videoHeight) : {};
+      if (r.src) out.push(r.src);
+    }
+  } catch {} finally { URL.revokeObjectURL(url); }
+  return out;
+}
+// una chiamata a OpenRouter con un modello qualsiasi; la risposta deve essere una diagnosi in JSON
+async function orChat(modelId, testo, imgs, onFase, det) {
+  const body = JSON.stringify({ model: modelId, messages: [{ role: "user", content: [{ type: "text", text: testo }, ...imgs.map(u => ({ type: "image_url", image_url: { url: u } }))] }], temperature: 0.3 });
+  const limite = window.__AT_LIMITE || 120000;
+  Object.assign(det, { servizio: "OpenRouter (gratuito)", modello: modelId, inviati: MB(body.length) + (det.inviati ? " " + det.inviati : ""), limite: limite / 1000 + " s" });
+  let r; try { r = await inviaXHR(OR_API + "chat/completions", body, onFase, limite, { authorization: "Bearer " + ORKEY() }); } catch (e) { throw problemaRete(e, det, "OpenRouter"); }
+  Object.assign(det, { fase: "risposta di OpenRouter", http: r.status, secondi: r.secondi + " s" });
+  let j = null; try { j = JSON.parse(r.text); } catch {}
+  const em = j?.error?.message || "";
+  if (em) det.messaggio = String(em).slice(0, 300);
+  if (r.status === 401) throw new Problema("Chiave OpenRouter non valida: controllala in Cronologia › Chiavi per l'analisi", det);
+  if (r.status === 402) throw new Problema("OpenRouter chiede credito: in quel momento il modello gratuito non era disponibile", det);
+  if (r.status === 429) throw new Problema("Limite gratuito di OpenRouter raggiunto: riprova più tardi", det);
+  if (r.status === 404 || /image|vision|modalit/i.test(em)) throw new Problema("Il modello gratuito scelto non è disponibile ora", det);
+  if (r.status >= 500) throw new Problema(`OpenRouter non disponibile (errore ${r.status})`, det);
+  if (r.status !== 200 || !j || j.error) throw new Problema(`Risposta inattesa da OpenRouter (errore ${r.status || "sconosciuto"})`, det);
+  det.modello = j.model || modelId;
+  const msg = j.choices?.[0]?.message || {};
+  const t = typeof msg.content === "string" ? msg.content : arr(msg.content).map(p => p.text || "").join("");
+  const out = leggiDiagnosi(t, det, "OpenRouter");
+  out.servizio = "OpenRouter · " + (j.model || modelId);
+  return out;
+}
+const testoFotogrammi = n => n ? `\nLe prime ${n} immagini sono fotogrammi di un video, in ordine di tempo; l'audio non è disponibile.` : "";
+async function openrouter(desc, foto, frames, onFase, modelId = "openrouter/free") {
+  const imgs = [...frames, ...foto].slice(0, 5);
+  const out = await orChat(modelId, PROMPT(desc, imgs.length, false) + testoFotogrammi(Math.min(frames.length, 5)), imgs, onFase, { inviati: frames.length ? `(${frames.length} fotogrammi del video)` : "" });
+  if (frames.length) out.nota = `video letto come ${frames.length} fotogrammi, senza audio`;
+  return out;
+}
+const corpoGemini = (testo, imgs, vid) => {
+  const parts = [];
+  if (vid) parts.push({ inline_data: { mime_type: vid.mime, data: vid.b64 } });
+  for (const d of imgs) parts.push({ inline_data: { mime_type: "image/jpeg", data: d.split(",")[1] } });
+  parts.push({ text: testo });
+  return JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { responseMimeType: "application/json", temperature: 0.3 } });
+};
+
+/* analisi: Gemini (più modelli, con nuovo tentativo) e poi, se serve, OpenRouter */
+async function analizza(desc, imgs, vid, fileVideo, onFase, onInfo) {
+  const tentativi = [], esito = e => e.det.http && e.det.http !== 200 ? "errore " + e.det.http : e.det.blocco ? "bloccata dai filtri" : e.det.http === 200 ? "risposta non valida" : e.det.motivo || "errore";
+  let ultimo = null;
+  if (KEY()) {
+    const body = corpoGemini(PROMPT(desc, imgs.length, !!vid), imgs, vid);
+    const limite = window.__AT_LIMITE || (vid ? 180000 : 90000);
+    let lista = [];
+    try { lista = (await modelli()).slice(0, 3); }
+    catch (e) { ultimo = new Problema(typeof e === "string" ? e : "Gemini non raggiungibile", { servizio: "Gemini", fase: "collegamento a Gemini" }); tentativi.push("Gemini: non raggiungibile"); }
+    giri: for (let i = 0; i < lista.length; i++) {
+      for (let rip = 0; rip < 2; rip++) {
+        const m = lista[i];
+        if (i || rip) { onInfo(rip ? `Gemini occupato: riprovo tra un attimo con ${m}…` : `${lista[i - 1]} non disponibile: provo ${m}…`, "Gemini"); await pausa(rip ? 3000 : 800); }
+        if (annullata) throw new Problema("Analisi annullata", {}, { riserva: false });
+        try { const out = await gemini(m, body, limite, vid, onFase); tentativi.push(m + ": ok"); out.servizio = "Gemini · " + m; out.tentativi = tentativi.join(" · "); return out; }
+        catch (e) {
+          if (!(e instanceof Problema)) throw e;
+          tentativi.push(`${m}: ${esito(e)}`); ultimo = e;
+          if (!e.altroModello) break giri;
+          if (rip === 0 && i === 0 && e.det.http >= 500) continue;   // stesso modello, una seconda volta
+          break;                                                      // modello successivo
+        }
+      }
+    }
+  }
+  if (ultimo && !ultimo.riserva) { ultimo.det.tentativi = tentativi.join(" · "); throw ultimo; }
+  if (ORKEY() && !annullata) {
+    let frames = [];
+    if (fileVideo) { onInfo("Gemini non disponibile: preparo i fotogrammi del video per OpenRouter…", "OpenRouter"); frames = await estraiFotogrammi(fileVideo, 3); }
+    onInfo(KEY() ? "Gemini non disponibile: passo alla riserva gratuita OpenRouter…" : "Analisi con OpenRouter…", "OpenRouter");
+    try { const out = await openrouter(desc, imgs, frames, onFase); tentativi.push("OpenRouter: ok"); out.tentativi = tentativi.join(" · "); return out; }
+    catch (e) {
+      if (!(e instanceof Problema)) throw e;
+      tentativi.push("OpenRouter: " + esito(e));
+      const gem = ultimo?.altroModello ? "tutti i modelli provati erano sovraccarichi o al limite gratuito" : ultimo?.msg;
+      const fin = ultimo && e.riserva ? new Problema(`Né Gemini né OpenRouter hanno risposto. Gemini: ${gem}. OpenRouter: ${e.msg}`, e.det, { riserva: false }) : e;
+      fin.det.tentativi = tentativi.join(" · "); throw fin;
+    }
+  }
+  if (!ultimo) ultimo = new Problema("Nessuna chiave inserita: aggiungi la chiave Gemini o OpenRouter", {});
+  if (ultimo.altroModello && tentativi.length > 1) ultimo.msg = "Tutti i modelli Gemini provati sono sovraccarichi o al limite gratuito: riprova tra qualche minuto";
+  if (KEY() && !ORKEY()) ultimo.msg += ". Per avere una riserva quando Gemini non risponde, aggiungi la chiave gratuita OpenRouter";
+  ultimo.det.tentativi = tentativi.join(" · "); throw ultimo;
+}
+
+/* ===== confronto tra più AI (gratuite): seconde opinioni in parallelo, poi un'AI "giudice" ===== */
+let ultimi = null;   // foto e video originali dell'ultima analisi (per il confronto a piena qualità)
+// modelli gratuiti di OpenRouter: quelli che leggono immagini (analisti) e quelli solo testo (giudici)
+async function modelliGratis() {
+  try { const s = JSON.parse(LS.get("at-ormodels") || "null"); if (s && Date.now() - s.t < 864e5 && s.l?.length) return s.l; } catch {}
+  let r;
+  try { r = await richiesta(OR_API + "models", {}, 20000); } catch { throw new Problema("Non riesco a leggere l'elenco dei modelli gratuiti di OpenRouter", {}); }
+  let j = {}; try { j = await r.json(); } catch {}
+  const l = arr(j.data).filter(m => m.id !== "openrouter/free" && (m.id.endsWith(":free") || (m.pricing?.prompt === "0" && m.pricing?.completion === "0")))
+    .map(m => ({ id: m.id, nome: m.name || m.id, img: arr(m.architecture?.input_modalities).includes("image") || /image/.test(m.architecture?.modality || "") }));
+  if (!l.length) throw new Problema("OpenRouter non ha modelli gratuiti disponibili in questo momento", {});
+  LS.set("at-ormodels", JSON.stringify({ t: Date.now(), l })); return l;
+}
+const PREF_ANALISTI = ["llama-4-maverick", "qwen3", "qwen2.5-vl", "gemma-3", "mistral-small", "kimi", "glm", "nemotron", "llama"];
+const PREF_GIUDICI = ["deepseek-r1", "deepseek-chat", "deepseek", "gpt-oss-120b", "qwen3-235b", "llama-4-maverick", "kimi", "glm", "qwen3", "gpt-oss"];
+const famiglia = id => id.split("/")[0];
+function scegli(lista, pref, n, esclusi = []) {
+  const rank = m => { const i = pref.findIndex(k => m.id.toLowerCase().includes(k)); return i < 0 ? 99 : i; };
+  const fatte = new Set(esclusi.map(famiglia)), out = [];
+  for (const m of [...lista].sort((a, b) => rank(a) - rank(b))) { if (out.length >= n) break; if (esclusi.includes(m.id) || fatte.has(famiglia(m.id))) continue; out.push(m); fatte.add(famiglia(m.id)); }
+  return out;
+}
+const nomeModello = s => String(s || "").replace(/^OpenRouter · |^Gemini · /, "").replace(/:free$/, "");
+const PROMPT_GIUDICE = (desc, op) => `Sei il responsabile tecnico che deve dare la diagnosi finale di un guasto (informatica; reti e infrastrutture IT come switch, router, firewall, server, NAS, Wi-Fi, cablaggio e fibra; automazione industriale come PLC, HMI, SCADA, inverter e bus di campo (Profinet, Profibus, Modbus, EtherNet/IP); elettrica; elettronica; idraulica; impianti di processo). Più AI lo hanno analizzato in modo indipendente. Confronta le loro diagnosi, valuta quali sono più coerenti con i sintomi e tra loro, e scrivi la diagnosi finale più attendibile, in italiano.
+Descrizione del tecnico: ${desc || "nessuna"}
+
+${op.map((o, i) => `--- AI ${i + 1}: ${o.servizio} (ha visto: ${o.visto}) ---\n${JSON.stringify(o.r)}`).join("\n\n")}
+
+Regole:
+- Dai più peso ai punti su cui concordano più AI e a chi ha visto il video con l'audio.
+- Se le AI non concordano, dillo chiaramente e indica quali verifiche sul campo permettono di capire chi ha ragione.
+- Per la sicurezza adotta sempre l'indicazione più prudente tra quelle date.
+- Non inventare dettagli che nessuna AI ha osservato.
+Rispondi SOLO con JSON:
+{"concordanza":"alta"|"media"|"bassa","titolo":"nome breve del problema","problema":"2-3 frasi","rischio":"basso"|"medio"|"alto"|"critico","sicurezza":"precauzioni, 1-2 frasi","causa":"causa più probabile e perché","soluzione":["passo 1","..."],"accordo":["punti su cui le AI concordano"],"disaccordo":["punti in cui divergono e come verificarli sul campo"],"motivazione":"2-3 frasi: perché questa è la conclusione più attendibile"}`;
+
+async function confronta(c) {
+  if (confronto) return;
+  if (!navigator.onLine) { setGem("err", "Offline: il confronto tra AI richiede la rete"); return; }
+  confronto = true; annullata = false; sfondo = false; $("#diag").hidden = true;
+  const t0 = Date.now(), sec = () => Math.round((Date.now() - t0) / 1000) + " s";
+  let stato = "Preparo il confronto…"; lavoro(stato, true);
+  const tick = setInterval(() => lavoro(`${stato} ${sec()}`), 1000);
+  const dire = s => { stato = s; lavoro(`${s} ${sec()}`); };
+  try {
+    const pieni = ultimi?.id === c.id;
+    const imgs = pieni ? ultimi.foto : arr(c.foto);
+    const vfile = pieni ? ultimi.video : null;
+    const primo = { servizio: c.r.servizio || "Prima analisi", visto: c.r.visto || "foto e descrizione", r: c.r };
+    const compiti = [];
+    // un altro modello Gemini: vede anche il video con l'audio
+    if (KEY()) {
+      let lista = []; try { lista = await modelli(); } catch {}
+      const alt = lista.find(m => !String(c.r.servizio || "").endsWith(m));
+      if (alt) compiti.push({ nome: alt, run: async () => {
+        let vid = null; if (vfile) vid = { mime: vfile.mime, b64: await leggiBase64(vfile.file) };
+        const out = await gemini(alt, corpoGemini(PROMPT(c.desc, imgs.length, !!vid), imgs, vid), window.__AT_LIMITE || (vid ? 180000 : 90000), vid, () => {});
+        return { servizio: "Gemini · " + alt, visto: vid ? "video con audio" + (imgs.length ? ` e ${imgs.length} foto` : "") : `${imgs.length} immagini`, r: out }; } });
+    }
+    // modelli gratuiti di OpenRouter che leggono immagini, di aziende diverse
+    if (ORKEY()) {
+      const tutti = await modelliGratis();
+      const usati = [String(c.r.servizio || "").replace(/^OpenRouter · /, "")];
+      let frames = []; if (vfile) { dire("Preparo i fotogrammi del video…"); frames = await estraiFotogrammi(vfile.file, 3); }
+      const lettura = [...frames, ...imgs].slice(0, 5);
+      for (const m of scegli(tutti.filter(x => x.img), PREF_ANALISTI, 2, usati)) compiti.push({ nome: nomeModello(m.id), run: async () => {
+        const out = await orChat(m.id, PROMPT(c.desc, lettura.length, false) + testoFotogrammi(frames.length), lettura, () => {}, {});
+        return { servizio: out.servizio, visto: frames.length ? `${frames.length} fotogrammi del video, senza audio` + (imgs.length ? ` e ${imgs.length} foto` : "") : `${lettura.length} immagini`, r: out }; } });
+    }
+    if (!compiti.length) throw new Problema("Per il confronto serve almeno un'altra AI: aggiungi la chiave gratuita OpenRouter in Cronologia › Chiavi per l'analisi", {});
+    let fatti = 0;
+    dire(`Chiedo una seconda opinione a ${compiti.length} AI (${compiti.map(k => k.nome).join(", ")})…`);
+    const esiti = await Promise.allSettled(compiti.map(async k => { const o = await k.run(); fatti++; dire(`Opinioni ricevute: ${fatti} di ${compiti.length}…`); return o; }));
+    if (annullata) throw new Problema("Confronto annullato", {});
+    const opinioni = [primo], falliti = [];
+    esiti.forEach((e, i) => e.status === "fulfilled" ? opinioni.push(e.value) : falliti.push(`${compiti[i].nome}: ${e.reason?.msg || "errore"}`));
+    if (opinioni.length < 2) throw new Problema("Nessuna altra AI ha risposto, il confronto non è possibile. " + falliti.join(" · "), { tentativi: falliti.join(" · ") });
+    // il giudice: preferibilmente un modello di un'altra azienda, poi Gemini
+    const giudici = [];
+    if (ORKEY()) { try { for (const m of scegli(await modelliGratis(), PREF_GIUDICI, 2, opinioni.map(o => String(o.servizio).replace(/^OpenRouter · /, ""))))
+      giudici.push({ nome: nomeModello(m.id), run: p => orChat(m.id, p, [], () => {}, {}) }); } catch {} }
+    if (KEY()) { try { const g = (await modelli())[0]; giudici.push({ nome: g, run: async p => { const o = await gemini(g, corpoGemini(p, [], null), 90000, null, () => {}); o.servizio = "Gemini · " + g; return o; } }); } catch {} }
+    let v = null, giudice = "", errG = [];
+    for (const g of giudici) {
+      if (annullata) throw new Problema("Confronto annullato", {});
+      dire(`Il giudice ${g.nome} confronta ${opinioni.length} diagnosi…`);
+      try { v = await g.run(PROMPT_GIUDICE(c.desc, opinioni)); giudice = v.servizio || g.nome; break; } catch (e) { errG.push(`${g.nome}: ${e?.msg || "errore"}`); }
+    }
+    if (!v) throw new Problema("Nessuna AI giudice ha risposto. Le opinioni raccolte non sono state confrontate.", { tentativi: [...falliti, ...errG].join(" · ") });
+    c.conferma = { data: Date.now(), giudice: nomeModello(giudice), v,
+      opinioni: opinioni.map(o => ({ servizio: nomeModello(o.servizio), visto: o.visto, titolo: o.r.titolo, causa: o.r.causa })), falliti };
+    await DB.put(c);
+    setGem("ok", `Confronto completato in ${sec()}: ${opinioni.length} AI, giudice ${nomeModello(giudice)} · concordanza ${v.concordanza || "non indicata"}`);
+    mostra(c); lista();
+    $("#verdetto")?.scrollIntoView({ block: "start" });
+  } catch (e) {
+    const msg = e instanceof Problema ? e.msg : "Errore imprevisto durante il confronto: riprova";
+    setGem("err", msg); mostraDiag(msg, e instanceof Problema ? e.det : {});
+  } finally { clearInterval(tick); confronto = false; fineLavoro(); }
+}
+function verdetto(c) {
+  const k = c.conferma, v = k.v || {}, conc = ["alta", "media", "bassa"].includes(v.concordanza) ? v.concordanza : "media";
+  const lv = ["basso", "medio", "alto", "critico"].includes(v.rischio) ? v.rischio : "medio";
+  const lista = (titolo, xs, cls) => arr(xs).length ? el("div", {}, [el("h3", { text: titolo }), el("ul", { class: "plain " + (cls || "") }, arr(xs).map(x => el("li", { text: str(x) })))]) : null;
+  return el("div", { class: "verdict", id: "verdetto" }, [
+    el("div", { class: "meta" }, [el("span", { class: "label", text: "Verdetto dopo il confronto" }), el("span", { class: "pill conc-" + conc, text: "concordanza " + conc }), el("span", { class: "pill " + lv, text: "rischio " + lv })]),
+    el("h2", { text: str(v.titolo) || "Diagnosi confrontata" }),
+    v.problema ? el("p", { text: str(v.problema) }) : null,
+    v.sicurezza ? el("div", { class: "safety " + lv }, [el("b", { text: "Sicurezza" }), str(v.sicurezza)]) : null,
+    v.causa ? el("div", {}, [el("h3", { text: "Causa più probabile" }), el("p", { text: str(v.causa) })]) : null,
+    arr(v.soluzione).length ? el("div", {}, [el("h3", { text: "Come risolvere" }), el("ol", { class: "steps" }, arr(v.soluzione).map(s => el("li", { text: str(s) })))]) : null,
+    lista("Su cosa concordano", v.accordo),
+    lista("Dove non concordano: verifica sul campo", v.disaccordo, "warnlist"),
+    v.motivazione ? el("p", { class: "note", text: str(v.motivazione) }) : null,
+    el("details", { class: "diag" }, [el("summary", { text: `Le ${arr(k.opinioni).length} diagnosi confrontate` }),
+      el("div", { class: "ops" }, arr(k.opinioni).map((o, i) => el("div", { class: "op" }, [el("b", { text: `${i + 1}. ${o.servizio}` }), el("span", { class: "note", text: "ha visto: " + o.visto }), el("p", { text: `${str(o.titolo)} — ${str(o.causa)}` })]))),
+      arr(k.falliti).length ? el("p", { class: "note", text: "Non hanno risposto: " + k.falliti.join(" · ") }) : null]),
+    el("p", { class: "note", text: `Giudice: ${k.giudice} · ${new Date(k.data).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` }),
+  ]);
+}
+function bloccoConfronto(c) {
+  if (c.manuale || !c.r?.causa) return null;
+  if (!KEY() && !ORKEY()) return null;
+  const pieni = ultimi?.id === c.id;
+  const b = el("button", { class: "btn ghost", type: "button", text: c.conferma ? "Ripeti il confronto" : "Chiedi conferma ad altre AI" });
+  b.onclick = () => confronta(c);
+  return el("div", { class: "stack confirm" }, [
+    c.conferma ? null : el("p", { class: "note", text: "Fai analizzare lo stesso guasto da altre AI gratuite e lascia che un'AI giudice confronti le risposte. Richiede 1–2 minuti." + (pieni ? "" : " Per questo caso verranno usate le anteprime salvate, senza video.") }),
+    b]);
+}
+
+/* pannello "Dettagli del problema" */
+const ETICHETTE = { tentativi: "Tentativi", servizio: "Ultimo servizio", fase: "Fase", motivo: "Tipo di errore", http: "Codice HTTP", messaggio: "Messaggio del servizio", fine: "Esito di Gemini", blocco: "Blocco", testo: "Inizio della risposta",
+  secondi: "Tempo trascorso", limite: "Tempo massimo", inviati: "Dati inviati", modello: "Modello", sfondo: "App in secondo piano" };
+function mostraDiag(msg, det) {
+  const righe = Object.keys(ETICHETTE).filter(k => det && det[k] !== "" && det[k] != null).map(k => [k, det[k]]);
+  const box = $("#diag"); box.hidden = !righe.length; box.open = false;
+  $("#diag-kv").replaceChildren(...righe.flatMap(([k, v]) => [el("dt", { text: ETICHETTE[k] }), el("dd", { text: String(v) })]));
+  const testo = [`Assistente Tecnico · ${new Date().toLocaleString("it-IT")}`, `Errore: ${msg}`, ...righe.map(([k, v]) => `${ETICHETTE[k]}: ${v}`), `Dispositivo: ${navigator.userAgent}`].join("\n");
+  $("#diag-copy").onclick = async () => { try { await navigator.clipboard.writeText(testo); $("#diag-copy").textContent = "Copiati ✓"; }
+    catch { const s = getSelection(), r = document.createRange(); r.selectNodeContents($("#diag-kv")); s.removeAllRanges(); s.addRange(r); $("#diag-copy").textContent = "Selezionati: tieni premuto e Copia"; } };
+  $("#diag-copy").textContent = "Copia i dettagli";
+}
+
+/* indicatore Gemini */
+const setGem = (stato, testo) => { setCheck($("#gem-st"), stato, testo); setCheck($("#key-st"), stato, testo); };
+let verificaInCorso = null;
+function verificaGemini() {
+  if (!KEY()) { if (ORKEY()) setGem("warn", "Gemini non impostato: l'analisi userà OpenRouter (solo immagini, senza audio)"); else setGem("off", "Analisi: nessuna chiave inserita, tocca qui per aggiungerla"); return Promise.resolve(false); }
+  if (!navigator.onLine) { setGem("err", "Offline: l'analisi con Gemini non è disponibile"); return Promise.resolve(false); }
+  if (verificaInCorso) return verificaInCorso;
+  setGem("wait", "Verifico il collegamento con Gemini…");
+  verificaInCorso = modello(true)
+    .then(m => { setGem("ok", "Gemini collegato e pronto · " + m); return true; })
+    .catch(e => { setGem("err", typeof e === "string" ? e : "Gemini non raggiungibile"); return false; })
+    .finally(() => { verificaInCorso = null; });
+  return verificaInCorso;
+}
+$("#gem-st").onclick = () => { if (!KEY() || $("#gem-st").classList.contains("err")) apriKey(); else verificaGemini(); };
+addEventListener("online", verificaGemini); addEventListener("offline", verificaGemini);
+// in archivio: anteprima del video + fino a 3 foto, ridotte
+const piccole = async () => { const imgs = await Promise.all(foto.slice(0, video?.poster ? 2 : 3).map(f => new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = f.src; })));
+  return [video?.poster, ...imgs.filter(Boolean).map(i => jpeg(i, i.naturalWidth, i.naturalHeight, 600))].filter(Boolean); };
+const svuota = () => { foto = []; scarti = []; if (video) URL.revokeObjectURL(video.url); video = null; mediaUI(); $("#desc").value = ""; $("#st").textContent = ""; };
+
+$("#go").onclick = async () => {
+  const desc = $("#desc").value.trim();
+  $("#st").textContent = "";
+  if (lavori) { $("#st").textContent = "Aspetta che foto e video finiscano di caricarsi."; return; }
+  if (!desc && !foto.length && !video) { $("#st").textContent = "Aggiungi una foto, un video o una descrizione."; return; }
+  if (!KEY() && !ORKEY()) { verificaGemini(); apriKey(); return; }
+  if (!navigator.onLine) { verificaGemini(); $("#st").textContent = "Se l'hai già risolto, puoi registrarlo a mano."; return; }
+  const inviati = cosa(), conVideo = !!video, t0 = Date.now();
+  let fase = "prepara", pct = 0, chi = KEY() ? "Gemini" : "OpenRouter", info = "";
+  const testo = () => { const s = Math.round((Date.now() - t0) / 1000) + " s";
+    if (fase === "prepara") return "Preparo i dati per l'invio…";
+    if (fase === "info") return `${info} ${s}`;
+    if (fase === "invio") return pct ? `Invio a ${chi}: ${pct}% · ${s}` : `Invio a ${chi} e analisi in corso… ${s}`;
+    return `${conVideo && chi === "Gemini" ? "Video arrivato ✓ · Gemini lo sta guardando e ascoltando" : `Dati arrivati ✓ · ${chi} sta analizzando`}… ${s}`; };
+  const tick = setInterval(() => lavoro(testo()), 1000);
+  $("#go").disabled = true; $("#diag").hidden = true; sfondo = false; annullata = false;
+  lavoro(testo(), true);
+  setGem("off", "Analisi in corso: segui l'avanzamento nella barra in fondo");
+  try {
+    let vid = null;
+    if (video && KEY()) {
+      let b64; try { b64 = await leggiBase64(video.file); } catch { throw new Problema("Non riesco a leggere il video dal telefono: caricalo di nuovo", { fase: "preparazione del video" }); }
+      if (!b64 || b64.length < 1000) throw new Problema("Il video risulta vuoto: caricalo di nuovo", { fase: "preparazione del video" });
+      vid = { mime: video.mime, b64 };
+    }
+    fase = "invio"; lavoro(testo());
+    const r = await analizza(desc, foto.map(f => f.src), KEY() ? vid : null, video?.file,
+      (f, p) => { fase = f; pct = p; lavoro(testo()); },
+      (msg, nome) => { info = msg; chi = nome || chi; fase = "info"; pct = 0; lavoro(testo()); });
+    const caso = { id: Date.now().toString(36), creato: Date.now(), desc, r, stato: "aperto", risolto: "", foto: await piccole(), video: video ? durata(video.durata) : undefined };
+    await DB.put(caso);
+    const ora = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), sec = Math.round((Date.now() - t0) / 1000);
+    setGem("ok", `Analisi completata alle ${ora} in ${sec} s con ${r.servizio}${inviati ? ` · ricevuti ${inviati}` : ""}${r.nota ? ` (${r.nota})` : ""}, nessun errore`);
+    r.visto = video && KEY() && /^Gemini/.test(r.servizio) ? "video con audio" + (foto.length ? ` e ${foto.length} foto` : "") : r.nota ? r.nota : `${foto.length} immagini`;
+    await DB.put(caso);
+    ultimi = { id: caso.id, foto: foto.map(f => f.src), video: video ? { file: video.file, mime: video.mime } : null };
+    svuota(); mostra(caso); lista();
+  } catch (e) {
+    const msg = e instanceof Problema ? e.msg : typeof e === "string" ? e : "Errore imprevisto durante l'analisi: riprova";
+    setGem("err", msg);
+    mostraDiag(msg, e instanceof Problema ? e.det : { fase: "preparazione", motivo: String(e?.message || e || "sconosciuto") });
+    $("#st").textContent = "Video, foto e descrizione restano qui: puoi riprovare, oppure registrarlo a mano se l'hai già risolto.";
+  }
+  finally { clearInterval(tick); $("#go").disabled = false; fineLavoro(); }
+};
+$("#stop").onclick = () => { annullata = true; for (const x of [...invii]) x.abort(); };
+
+/* registrazione manuale */
+const apriMan = () => { $("#man").hidden = false; $("#b-man").hidden = true; $("#m-tit").focus(); };
+const chiudiMan = () => { $("#man").hidden = true; $("#b-man").hidden = false; $("#m-tit").value = ""; $("#m-sol").value = ""; };
+$("#b-man").onclick = apriMan;
+$("#m-cancel").onclick = chiudiMan;
+$("#m-save").onclick = async () => {
+  const tit = $("#m-tit").value.trim(), sol = $("#m-sol").value.trim(), desc = $("#desc").value.trim();
+  if (!tit) return $("#m-tit").focus();
+  if (!sol) return $("#m-sol").focus();
+  const caso = { id: Date.now().toString(36), creato: Date.now(), desc, manuale: true, r: { titolo: tit }, stato: "risolto", risolto: sol, foto: await piccole() };
+  await DB.put(caso);
+  svuota(); chiudiMan();
+  mostra(caso); lista();
+};
+
+/* risultato */
+function mostra(c) {
+  const r = c.r || {}, lv = ["basso", "medio", "alto", "critico"].includes(r.rischio) ? r.rischio : "medio";
+  const box = $("#res"); box.hidden = false; fill(box,
+    el("div", { class: "meta" }, [el("span", { class: "pill " + c.stato, text: c.stato }), c.manuale ? el("span", { class: "pill", text: "manuale" }) : el("span", { class: "pill " + lv, text: "rischio " + lv }), c.video ? el("span", { class: "pill", text: "video " + c.video }) : null, el("span", { class: "label", text: data(c.creato) })]),
+    el("h2", { text: str(r.titolo) || "Diagnosi" }),
+    c.foto?.length ? el("div", { class: "thumbs" }, c.foto.map(s => el("div", { class: "thumb" }, el("img", { src: s, alt: "" })))) : null,
+    r.problema ? el("p", { text: str(r.problema) }) : null,
+    c.manuale && c.desc ? el("p", { text: c.desc }) : null,
+    r.sicurezza ? el("div", { class: "safety " + lv }, [el("b", { text: "Sicurezza" }), str(r.sicurezza)]) : null,
+    r.causa ? el("div", {}, [el("h3", { text: "Causa probabile" }), el("p", { text: str(r.causa) })]) : null,
+    arr(r.soluzione).length ? el("div", {}, [el("h3", { text: "Come risolvere" }), el("ol", { class: "steps" }, arr(r.soluzione).map(s => el("li", { text: str(s) })))]) : null,
+    r.impara ? el("div", { class: "learn" }, [el("div", { class: "label", text: "Da imparare" }), el("p", { text: str(r.impara) })]) : null,
+    r.servizio ? el("p", { class: "note", text: "Analizzato da " + r.servizio + (r.nota ? " · " + r.nota : "") }) : null,
+    c.conferma ? verdetto(c) : null,
+    bloccoConfronto(c),
+    chiusura(c),
+  );
+  box.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+function chiusura(c) {
+  if (c.stato === "risolto") return el("div", { class: "real" }, [el("div", { class: "label", text: "Soluzione che ha funzionato" }), el("p", { text: c.risolto })]);
+  const ta = el("textarea", { placeholder: "Quando l'hai risolto, scrivi qui cosa hai fatto davvero.", "aria-label": "Soluzione che ha funzionato" });
+  ta.style.minHeight = "70px";
+  const b = el("button", { class: "btn ok small", type: "button", text: "Segna come risolto" });
+  b.onclick = async () => { if (!ta.value.trim()) return ta.focus(); c.stato = "risolto"; c.risolto = ta.value.trim(); await DB.put(c); mostra(c); lista(); };
+  const del = el("button", { class: "btn ghost small", type: "button", text: "Elimina" });
+  del.onclick = async () => { if (del.dataset.ok) { await DB.del(c.id); $("#res").hidden = true; lista(); } else { del.dataset.ok = "1"; del.textContent = "Conferma eliminazione"; } };
+  return el("div", { class: "stack" }, [ta, el("div", { class: "meta" }, [b, del])]);
+}
+
+/* cronologia */
+async function lista() {
+  const all = await DB.all(), box = $("#hist");
+  if (!all.length) { box.replaceChildren(el("div", { class: "empty", text: "Qui troverai ogni problema analizzato con la sua soluzione." })); return; }
+  box.replaceChildren(...all.map(c => el("button", { class: "item", type: "button", onclick: () => mostra(c) }, [
+    el("div", {}, [el("b", { text: str(c.r?.titolo) || "Problema" }), el("span", { class: "sub", text: c.stato === "risolto" ? "✓ " + c.risolto : data(c.creato) + (c.desc ? " · " + c.desc : "") })]),
+    el("span", { class: "pill " + c.stato, text: c.stato }),
+  ])));
+}
+
+/* archivio: esporta / importa (backup su File/iCloud o passaggio a un altro dispositivo) */
+$("#exp").onclick = async () => {
+  const all = await DB.all(); if (!all.length) { sync("L'archivio è vuoto."); return; }
+  const name = `assistente-tecnico-archivio-${new Date().toISOString().slice(0, 10)}.json`;
+  const file = new File([JSON.stringify({ app: "assistente-tecnico", versione: 2, casi: all })], name, { type: "application/json" });
+  if (NATIVA) {
+    const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(",")[1] || ""); fr.onerror = () => r(""); fr.readAsDataURL(file); });
+    if (!b64) { sync("Non riesco a preparare il file dell'archivio."); return; }
+    nativo({ action: "saveFile", name, data: b64 }); sync("Archivio pronto: scegli dove salvarlo (es. Salva su File)."); return;
+  }
+  if (navigator.canShare?.({ files: [file] })) {   // iPhone: foglio Condividi › Salva su File
+    try { await navigator.share({ files: [file] }); sync("Archivio esportato."); return; } catch (e) { if (e?.name === "AbortError") return; }
+  }
+  const a = el("a", { href: URL.createObjectURL(file), download: name }); document.body.append(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000); sync("Archivio esportato.");
+};
+$("#imp").onclick = () => $("#in-imp").click();
+$("#in-imp").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const d = JSON.parse((await f.text()).replace(/^﻿/, "")); if (d.app !== "assistente-tecnico") throw 0;
+    const have = new Map((await DB.all()).map(c => [c.id, c])); let n = 0;
+    for (const c of arr(d.casi)) { if (!c?.id) continue; const h = have.get(c.id);
+      if (!h || (c.stato === "risolto" && h.stato !== "risolto")) { await DB.put(c); n++; } }
+    sync(`Importati ${n} casi.`); lista();
+  } catch { sync("File di archivio non valido."); }
+};
+
+/* chiave per l'analisi */
+const keyUI = () => { $("#key").value = KEY() ? "••••••••" + KEY().slice(-4) : ""; };
+function apriKey() { $("#keybox").hidden = false; $("#keybox").scrollIntoView({ block: "center" }); }
+$("#b-key").onclick = () => { $("#keybox").hidden = !$("#keybox").hidden; };
+$("#key").addEventListener("focus", e => { if (e.target.value.startsWith("••")) e.target.value = ""; });
+$("#key-save").onclick = async () => { const k = $("#key").value.trim();
+  if (k.startsWith("••")) { verificaGemini(); return; }
+  if (k.length < 20 || /\s/.test(k)) { setGem("err", "La chiave non sembra completa: copiala di nuovo da Google AI Studio"); return; }
+  LS.set("at-key", k); LS.del("at-models"); keyUI(); $("#st").textContent = "";
+  if (await verificaGemini()) setTimeout(() => { $("#keybox").hidden = true; }, 1500); };
+$("#key-test").onclick = () => verificaGemini();
+$("#key-del").onclick = () => { LS.del("at-key"); LS.del("at-models"); keyUI(); verificaGemini(); };
+keyUI();
+verificaGemini();
+
+const orUI = () => { $("#orkey").value = ORKEY() ? "••••••••" + ORKEY().slice(-4) : ""; };
+async function verificaOR() {
+  const n = $("#or-st");
+  if (!ORKEY()) { setCheck(n, "off", "Riserva non attiva: nessuna chiave OpenRouter"); return false; }
+  if (!navigator.onLine) { setCheck(n, "err", "Offline: impossibile verificare OpenRouter"); return false; }
+  setCheck(n, "wait", "Verifico OpenRouter…");
+  let r;
+  try { r = await richiesta(OR_API + "key", { authorization: "Bearer " + ORKEY() }, 15000); }
+  catch (e) { setCheck(n, "err", e?.message === "timeout" ? "OpenRouter non risponde (15 s)" : "OpenRouter non raggiungibile da questo iPhone: controlla la connessione"); return false; }
+  if (r.status === 401 || r.status === 403) { setCheck(n, "err", "Chiave OpenRouter non valida: copiala di nuovo da openrouter.ai › Keys"); return false; }
+  if (!r.ok) { setCheck(n, "err", `OpenRouter non disponibile (errore ${r.status}): riprova più tardi`); return false; }
+  let d = {}; try { d = (await r.json()).data || {}; } catch {}
+  setCheck(n, "ok", "OpenRouter collegato: riserva gratuita pronta" + (d.is_free_tier ? " · piano gratuito" : ""));
+  return true;
+}
+$("#orkey").addEventListener("focus", e => { if (e.target.value.startsWith("••")) e.target.value = ""; });
+$("#or-save").onclick = async () => { const k = $("#orkey").value.trim();
+  if (k.startsWith("••")) { verificaOR(); return; }
+  if (k.length < 20 || /\s/.test(k)) { setCheck($("#or-st"), "err", "La chiave non sembra completa: copiala di nuovo da openrouter.ai"); return; }
+  LS.set("at-orkey", k); orUI(); verificaOR(); verificaGemini(); };
+$("#or-del").onclick = () => { LS.del("at-orkey"); orUI(); verificaOR(); verificaGemini(); };
+orUI();
+verificaOR();
+addEventListener("online", verificaOR);
+
+sync(DB.volatile ? "Safari non permette il salvataggio: apri la pagina normale (non in Navigazione privata)." : "Salvata su questo dispositivo.");
+lista();
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+name: Compila IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installa XcodeGen
+        run: brew install xcodegen
+
+      - name: Genera il progetto Xcode
+        run: xcodegen generate
+
+      - name: Compila (senza firma)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project AssistenteTecnico.xcodeproj \
+            -scheme AssistenteTecnico \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tee build.log | grep -E "error:|BUILD" || true
+          test -d build/Build/Products/Release-iphoneos/AssistenteTecnico.app
+
+      - name: Crea IPA
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/AssistenteTecnico.app Payload/
+          zip -qr AssistenteTecnico.ipa Payload
+
+      - name: Pubblica la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          gh release create "$TAG" AssistenteTecnico.ipa \
+            --title "Assistente Tecnico $TAG" \
+            --notes "Installa AssistenteTecnico.ipa con Sideloadly (Apple ID gratuito: da rinnovare ogni 7 giorni)."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AssistenteTecnico-ipa
+          path: AssistenteTecnico.ipa
