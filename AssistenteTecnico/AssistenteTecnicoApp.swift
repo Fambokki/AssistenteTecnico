@@ -17,8 +17,8 @@ extension UIColor {
     /// Stesso sfondo dell'app web, chiaro o scuro
     static let sfondoApp = UIColor { tratti in
         tratti.userInterfaceStyle == .dark
-            ? UIColor(red: 0.078, green: 0.102, blue: 0.122, alpha: 1)
-            : UIColor(red: 0.933, green: 0.941, blue: 0.925, alpha: 1)
+            ? UIColor(red: 0.067, green: 0.090, blue: 0.110, alpha: 1)   // #11171c
+            : UIColor(red: 0.796, green: 0.816, blue: 0.800, alpha: 1)   // #cbd0cc, RAL 7035
     }
 }
 
@@ -54,7 +54,8 @@ struct WebAppView: UIViewRepresentable {
         cfg.allowsInlineMediaPlayback = true
         let ucc = cfg.userContentController
         ucc.add(context.coordinator, name: "native")
-        ucc.addUserScript(WKUserScript(source: "window.__NATIVE_IOS__ = true;",
+        let icona = UIApplication.shared.alternateIconName ?? "AppIcon"
+        ucc.addUserScript(WKUserScript(source: "window.__NATIVE_IOS__ = true; window.__APP_ICON__ = '\(icona)';",
                                        injectionTime: .atDocumentStart, forMainFrameOnly: true))
 
         let wv = WKWebView(frame: .zero, configuration: cfg)
@@ -165,6 +166,18 @@ struct WebAppView: UIViewRepresentable {
                 avviaRichiesta(body)
             case "httpCancel":
                 if let id = body["id"] as? String { tasks[id]?.cancel() }
+            case "setIcon":
+                guard let name = body["name"] as? String else { return }
+                let target: String? = (name == "AppIcon") ? nil : name
+                guard UIApplication.shared.supportsAlternateIcons else {
+                    chiamaJS("window.onNativeIconChanged", [name, false]); return
+                }
+                if UIApplication.shared.alternateIconName == target {
+                    chiamaJS("window.onNativeIconChanged", [name, true]); return
+                }
+                UIApplication.shared.setAlternateIconName(target) { [weak self] err in
+                    DispatchQueue.main.async { self?.chiamaJS("window.onNativeIconChanged", [name, err == nil]) }
+                }
             case "saveFile":
                 guard let name = body["name"] as? String, let b64 = body["data"] as? String,
                       let data = Data(base64Encoded: b64) else { return }

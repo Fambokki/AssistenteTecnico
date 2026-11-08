@@ -9,146 +9,256 @@
 <meta name="apple-mobile-web-app-title" content="Assistente">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#eef0ec" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#141a1f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#cbd0cc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11171c" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-180.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="preload" href="archivo.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Layout: una sola colonna — scheda di intervento, risultato, cronologia */
+/*
+  Assistente Tecnico — linguaggio visivo "quadro d'impianto"
+  Sfondo: grigio RAL 7035 degli armadi elettrici. Superfici: targhette chiare.
+  Stato: colori della segnaletica di sicurezza (RAL 6024 verde, 1003 giallo, 3020 rosso).
+  Un solo carattere, Archivo, in larghezze diverse: allargato per il nome (targa incisa), normale per il testo.
+  Elemento distintivo: il mirino d'ispezione con angoli a squadra attorno a foto e video.
+*/
+@font-face{font-family:"Archivo";src:url("archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
 :root{
-  --bg:#eef0ec; --surface:#fbfcf9; --ink:#1d2a33; --muted:#5b6872; --line:#cfd5cf;
-  --accent:#1f5f8b; --accent-ink:#fff; --tag:#f2c230;
-  --ok:#2e7d4f; --ok-bg:#e5f3ea; --warn:#b7791f; --warn-bg:#fdf3dc; --crit:#b3261e; --crit-bg:#fbe9e7;
-  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-body:"IBM Plex Sans",-apple-system,system-ui,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --bg:#cbd0cc;          /* RAL 7035 */
+  --surface:#fbfcfa;
+  --surface-2:#eef1ee;
+  --ink:#14222c;
+  --muted:#52606a;
+  --line:#c3c9c5;
+  --line-strong:#9aa3a0;
+  --accent:#0d5a9e;      /* blu acqua */
+  --accent-ink:#ffffff;
+  --accent-soft:#e3eef8;
+  --ok:#00804e;          /* RAL 6024 */
+  --ok-ink:#ffffff;
+  --ok-bg:#e2f2ea;
+  --warn:#8a5d00;        /* testo su giallo */
+  --warn-fill:#f2a900;   /* RAL 1003 */
+  --warn-bg:#fdf1cf;
+  --crit:#b3121b;        /* RAL 3020 */
+  --crit-bg:#fbe5e4;
+  --shadow:0 1px 0 rgba(20,34,44,.06),0 8px 24px -12px rgba(20,34,44,.28);
+  --r-lg:16px; --r-md:11px; --r-sm:7px;
+  --font:"Archivo",-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
   color-scheme:light;
-  /* barra di stato e indicatore Home dell'iPhone */
   padding-top:env(safe-area-inset-top,0px);
 }
 @media (prefers-color-scheme: dark){:root{
-  --bg:#141a1f; --surface:#1c242a; --ink:#e6ebe7; --muted:#9aa6ae; --line:#2f3a42;
-  --accent:#6fb0de; --accent-ink:#0d1a24; --tag:#e8b923;
-  --ok:#6cc58f; --ok-bg:#17301f; --warn:#e3a94a; --warn-bg:#352a14; --crit:#f2867c; --crit-bg:#3a1d1a; color-scheme:dark}}
+  --bg:#11171c; --surface:#1a2229; --surface-2:#212b33; --ink:#e5eaed; --muted:#9aa7b0; --line:#2c3740; --line-strong:#43515c;
+  --accent:#5aa8ea; --accent-ink:#06223a; --accent-soft:#16324a;
+  --ok:#4fc58d; --ok-ink:#062314; --ok-bg:#12301f; --warn:#f4c15a; --warn-fill:#f2a900; --warn-bg:#33270e; --crit:#ff8a80; --crit-bg:#3a1a19;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 10px 28px -14px rgba(0,0,0,.7);
+  color-scheme:dark}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;background:var(--bg)}
 img{max-width:100%}
-button,input,textarea,label{touch-action:manipulation}
-button{-webkit-user-select:none;user-select:none}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body);
+button,input,textarea,label,summary{touch-action:manipulation}
+button{-webkit-user-select:none;user-select:none;font-family:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--font);font-stretch:100%;font-variant-numeric:tabular-nums;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:18px calc(40px + env(safe-area-inset-bottom,0px))}
-.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
-h1{font-size:2.2rem;font-weight:800;text-transform:uppercase;line-height:1;border-bottom:3px solid var(--ink);padding-bottom:8px}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.label{font:500 .72rem/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{border:0;border-radius:4px;font:700 1.08rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.05em;padding:14px 16px;min-height:48px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
-.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
-.btn.ok{background:var(--ok);color:var(--accent-ink)}
-.btn.small{font-size:.95rem;padding:10px 14px;min-height:44px}
-.btn[disabled]{opacity:.5}
-button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-input[type=text],input[type=password]{width:100%;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);padding:11px 12px;-webkit-appearance:none;appearance:none}
-input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.link{background:none;border:0;color:var(--accent);font:500 .95rem var(--f-body);padding:10px 0;min-height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:flex-start;text-align:left}
-textarea{width:100%;min-height:100px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);padding:10px 12px;resize:vertical;-webkit-appearance:none;appearance:none}
-.thumbs{display:flex;flex-wrap:wrap;gap:8px}
-.thumb{position:relative;width:76px;height:76px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.thumb button{position:absolute;top:2px;right:2px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:17px;line-height:32px;padding:0;cursor:pointer}
-.status{font:500 .85rem/1.4 var(--f-mono);color:var(--muted);margin:0}
+  padding-block:14px calc(36px + env(safe-area-inset-bottom,0px))}
+body.sheet-aperto{overflow:hidden}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.main,.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+h1,h2,h3{margin:0;text-wrap:balance;font-family:var(--font)}
+p{margin:0}
+
+/* ---------- testata: la targa ---------- */
+.top{display:flex;align-items:center;gap:12px;padding:6px 2px 4px}
+.marchio{flex:none;width:40px;height:40px;border-radius:10px;background:var(--accent);display:grid;place-items:center;box-shadow:var(--shadow)}
+.marchio svg{width:26px;height:26px}
+.titolo{flex:1;min-width:0}
+h1{font-size:1.42rem;line-height:1.05;font-weight:800;font-stretch:125%;letter-spacing:-.01em}
+.sottotitolo{font-size:.86rem;color:var(--muted);margin-top:2px}
+.ingranaggio{flex:none;width:44px;height:44px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.ingranaggio svg{width:22px;height:22px}
+
+/* ---------- superfici ---------- */
+.panel{background:var(--surface);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
+.label{font-size:.82rem;font-weight:600;color:var(--muted);letter-spacing:0}
+.note{font-size:.86rem;color:var(--muted)}
+.status{font-size:.86rem;color:var(--muted)}
 .status:empty{display:none}
-.note{margin:0;font-size:.85rem;color:var(--muted)}
-.pill{font:500 .68rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.07em;padding:5px 7px;border-radius:3px;border:1px solid currentColor;white-space:nowrap}
-.pill.risolto,.pill.basso{color:var(--ok);background:var(--ok-bg)}
-.pill.aperto,.pill.medio{color:var(--warn);background:var(--warn-bg)}
-.pill.alto,.pill.critico{color:var(--crit);background:var(--crit-bg)}
-.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .stack{display:flex;flex-direction:column;gap:8px}
-#res h2{font-size:1.8rem;font-weight:800;line-height:1.05}
-#res p{margin:0}
-.safety{border-left:4px solid var(--crit);background:var(--crit-bg);padding:10px 12px;border-radius:2px}
-.safety.medio{border-color:var(--warn);background:var(--warn-bg)}
-.safety.basso{border-color:var(--ok);background:var(--ok-bg)}
-.safety b{display:block;margin-bottom:2px}
-h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.02em;margin-bottom:4px}
-ol.steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
-ol.steps li::marker{font:800 1.05rem var(--f-display);color:var(--accent)}
-.learn{background:var(--ink);color:var(--bg);border-radius:4px;padding:12px 14px}
-.learn .label{color:var(--tag)}
-.real{border:2px solid var(--ok);background:var(--ok-bg);border-radius:4px;padding:10px 12px}
-.real p{white-space:pre-wrap}
-.hist{display:flex;flex-direction:column;gap:8px}
-.item{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:56px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:11px 12px;cursor:pointer;font:inherit}
-.item div{min-width:0}
-.item b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.item span.sub{display:block;font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.empty{color:var(--muted);text-align:center;padding:18px;border:2px dashed var(--line);border-radius:6px}
-/* indicatori di stato: pallino con ✓ / ✗ / ! */
-.check{display:flex;align-items:center;gap:10px;font:500 .92rem/1.35 var(--f-body);color:var(--ink);background:none;border:0;padding:4px 0;margin:0;text-align:left;width:100%}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+h2{font-size:1.5rem;line-height:1.12;font-weight:750;font-stretch:108%;letter-spacing:-.01em}
+h3{font-size:1.02rem;font-weight:700;font-stretch:108%;margin-bottom:4px}
+
+/* ---------- il mirino d'ispezione ---------- */
+.mirino{--c:var(--accent);--l:26px;--s:3px;position:relative;border-radius:var(--r-md);padding:14px;
+  background:
+    linear-gradient(var(--c),var(--c)) top left/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) top left/var(--s) var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) top right/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) top right/var(--s) var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom left/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom left/var(--s) var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom right/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom right/var(--s) var(--l) no-repeat,
+    var(--surface-2);
+  display:flex;flex-direction:column;gap:12px}
+.cattura{display:flex;align-items:center;gap:12px;text-align:left;width:100%;min-height:76px;padding:12px 14px;border:0;border-radius:var(--r-md);background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:0 1px 0 var(--line)}
+.cattura svg{flex:none;width:30px;height:30px;color:var(--accent)}
+.cattura b{display:block;font-size:1.05rem;font-weight:700;font-stretch:108%}
+.cattura span{display:block;font-size:.8rem;color:var(--muted);line-height:1.3}
+.cattura:active{transform:translateY(1px)}
+
+/* ---------- campi ---------- */
+input[type=text],input[type=password],textarea{width:100%;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--surface);color:var(--ink);font:400 16px/1.45 var(--font);padding:12px 13px;-webkit-appearance:none;appearance:none}
+textarea{min-height:108px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.85}
+input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- pulsanti ---------- */
+.btn{border:0;border-radius:var(--r-md);font:700 1.05rem/1 var(--font);font-stretch:112%;padding:16px 18px;min-height:54px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn:active{filter:brightness(.94)}
+.btn[disabled]{opacity:.45}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
+.btn.ok{background:var(--ok);color:var(--ok-ink)}
+.btn.small{font-size:.95rem;font-stretch:104%;padding:11px 14px;min-height:44px}
+.link{background:none;border:0;color:var(--accent);font:600 .95rem var(--font);padding:10px 0;min-height:44px;cursor:pointer;align-self:flex-start;text-align:left;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px}
+
+/* ---------- miniature ---------- */
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumbs:empty{display:none}
+.thumb{position:relative;width:78px;height:78px;border-radius:var(--r-sm);overflow:hidden;background:var(--surface);box-shadow:0 0 0 1px var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;top:3px;right:3px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(10,20,28,.62);color:#fff;font-size:17px;line-height:30px;padding:0;cursor:pointer}
+.thumb .badge{position:absolute;left:4px;bottom:4px;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font:700 13px/1 var(--font);box-shadow:0 0 0 2px var(--surface)}
+.thumb.vid{background:#0a141c;display:grid;place-items:center}
+.thumb .play{color:#fff;font-size:1.5rem}
+.thumb .dur{position:absolute;left:4px;top:4px;background:rgba(10,20,28,.72);color:#fff;font:600 .7rem/1 var(--font);padding:4px 6px;border-radius:5px}
+.thumb.bad{background:var(--crit-bg);box-shadow:0 0 0 2px var(--crit);display:grid;place-items:center;color:var(--crit);font:700 1.6rem/1 var(--font)}
+
+/* ---------- indicatori di stato ---------- */
+.check{display:flex;align-items:center;gap:10px;font:500 .92rem/1.35 var(--font);color:var(--ink);background:none;border:0;padding:2px 0;margin:0;text-align:left;width:100%}
 button.check{min-height:44px;cursor:pointer}
-.check .dot{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 13px/1 var(--f-body);color:var(--surface);background:var(--muted)}
+.check .dot{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:800 12px/1 var(--font);color:#fff;background:var(--line-strong)}
 .check.ok .dot{background:var(--ok)}
 .check.err .dot{background:var(--crit)}
-.check.warn .dot,.check.wait .dot{background:var(--warn)}
+.check.warn .dot,.check.wait .dot{background:var(--warn-fill);color:#2b1d00}
 .check.err{color:var(--crit)}
-.check.wait .dot{animation:pulse 1s ease-in-out infinite}
-@keyframes pulse{50%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.check.wait .dot{animation:none}}
-.errlist{margin:0;padding-left:32px;font-size:.85rem;color:var(--crit);display:flex;flex-direction:column;gap:2px}
-.thumb .badge{position:absolute;left:4px;bottom:4px;width:22px;height:22px;border-radius:50%;background:var(--ok);color:var(--surface);display:grid;place-items:center;font:700 13px/1 var(--f-body);box-shadow:0 0 0 2px var(--surface)}
-.thumb.vid{background:#000;display:grid;place-items:center}
-.thumb .play{color:#fff;font-size:1.6rem}
-.thumb .dur{position:absolute;left:4px;top:4px;background:rgba(0,0,0,.7);color:#fff;font:500 .68rem/1 var(--f-mono);padding:3px 5px;border-radius:3px}
-.thumb.bad{border:2px solid var(--crit);background:var(--crit-bg);display:grid;place-items:center;color:var(--crit);font:700 1.7rem/1 var(--f-body)}
-.diag{border:1px solid var(--line);border-radius:4px;padding:0 12px;background:var(--bg)}
-.diag summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:500 .78rem/1.2 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.diag[open]{padding-bottom:4px}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 4px;font-size:.85rem}
-.kv dt{color:var(--muted)}
-.kv dd{margin:0;min-width:0;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:.8rem}
-/* barra in fondo: cosa sta facendo l'app (sempre visibile mentre lavora) */
-.workbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--warn-bg);border-top:2px solid var(--warn);box-shadow:0 -6px 18px rgba(0,0,0,.12);
-  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.workbar .in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px}
-.workbar .check{flex:1;min-width:0;padding:0}
-.workbar .btn{flex:none}
-body.lavora{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
-.verdict{border:2px solid var(--accent);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
-.verdict h2{font-size:1.6rem!important}
-.pill.conc-alta{color:var(--ok);background:var(--ok-bg)}
-.pill.conc-media{color:var(--warn);background:var(--warn-bg)}
-.pill.conc-bassa{color:var(--crit);background:var(--crit-bg)}
-ul.plain{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px}
-ul.warnlist li::marker{color:var(--warn)}
+.check.wait .dot{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(.72);opacity:.5}}
+.errlist{margin:0;padding-left:32px;font-size:.86rem;color:var(--crit);display:flex;flex-direction:column;gap:2px}
+
+/* ---------- etichette ---------- */
+.pill{font:600 .74rem/1 var(--font);font-stretch:104%;padding:6px 9px;border-radius:999px;white-space:nowrap;background:var(--surface-2);color:var(--muted)}
+.pill.risolto,.pill.basso,.pill.conc-alta{color:var(--ok);background:var(--ok-bg)}
+.pill.aperto,.pill.medio,.pill.conc-media{color:var(--warn);background:var(--warn-bg)}
+.pill.alto,.pill.critico,.pill.conc-bassa{color:var(--crit);background:var(--crit-bg)}
+
+/* ---------- rapporto d'intervento ---------- */
+#res{gap:14px;border-top:6px solid var(--line-strong)}
+#res[data-rischio="basso"]{border-top-color:var(--ok)}
+#res[data-rischio="medio"]{border-top-color:var(--warn-fill)}
+#res[data-rischio="alto"],#res[data-rischio="critico"]{border-top-color:var(--crit)}
+#res .label{font-weight:500}
+.safety{display:flex;flex-direction:column;gap:2px;border-radius:var(--r-md);padding:12px 14px;background:var(--crit-bg);color:var(--ink);border-left:5px solid var(--crit)}
+.safety.medio{background:var(--warn-bg);border-left-color:var(--warn-fill)}
+.safety.basso{background:var(--ok-bg);border-left-color:var(--ok)}
+.safety b{font-weight:750;font-stretch:108%}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:passo;display:flex;flex-direction:column;gap:8px}
+ol.steps li{counter-increment:passo;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+ol.steps li::before{content:counter(passo);width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:750 .85rem/1 var(--font)}
+ul.plain{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:4px}
+ul.warnlist li::marker{color:var(--warn-fill)}
+.learn{background:var(--ink);color:var(--surface);border-radius:var(--r-md);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.learn .label{color:var(--warn-fill);font-weight:700}
+.real{border-radius:var(--r-md);padding:12px 14px;background:var(--ok-bg);border-left:5px solid var(--ok);display:flex;flex-direction:column;gap:4px}
+.real .label{color:var(--ok);font-weight:700}
+.real p{white-space:pre-wrap}
+.verdict{border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:12px;background:var(--surface);box-shadow:0 0 0 2px var(--accent)}
+.verdict h2{font-size:1.35rem}
 .ops{display:flex;flex-direction:column;gap:10px;padding-bottom:10px}
-.op{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--line);padding-left:10px}
-.op p{margin:0}
-.confirm{border-top:1px solid var(--line);padding-top:12px}
-.hint{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--tag);border-radius:4px;padding:10px 12px;font-size:.9rem}
-.hint p{margin:0;flex:1}
-.hint button{background:none;border:0;color:var(--muted);font-size:20px;line-height:1;width:44px;height:44px;margin:-10px -12px -10px 0;cursor:pointer}
-@media (max-width:420px){h1{font-size:1.9rem}}
-.main,.side{display:flex;flex-direction:column;gap:16px;min-width:0}
-/* iPad e schermi larghi: lavoro a sinistra, cronologia sempre visibile a destra */
+.op{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--line-strong);padding-left:10px}
+.confirm{border-top:1px solid var(--line);padding-top:14px}
+
+/* ---------- dettagli tecnici ---------- */
+.diag{border-radius:var(--r-md);padding:0 12px;background:var(--surface-2)}
+.diag summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:600 .88rem var(--font);color:var(--muted)}
+.diag[open]{padding-bottom:6px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0 0 6px;font-size:.86rem}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+
+/* ---------- cronologia ---------- */
+.intest{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.intest h2{font-size:1.15rem;font-stretch:112%}
+.hist{display:flex;flex-direction:column}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;min-height:60px;text-align:left;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);padding:12px 2px;cursor:pointer;font:inherit}
+.item:first-child{border-top:0}
+.item div{min-width:0}
+.item b{display:block;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item span.sub{display:block;font-size:.84rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--muted);text-align:left;padding:4px 0 2px;font-size:.92rem}
+
+/* ---------- barra in fondo: lavoro in corso ---------- */
+.workbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--warn-bg);border-top:3px solid var(--warn-fill);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.workbar .in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.workbar .check{flex:1;min-width:0;padding:0}
+.workbar .btn{flex:none;background:var(--surface)}
+body.lavora{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- avviso schermata Home (solo Safari) ---------- */
+.hint{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border-radius:var(--r-md);border-left:5px solid var(--warn-fill);padding:12px 14px;font-size:.92rem;box-shadow:var(--shadow)}
+.hint p{flex:1}
+.hint button{background:none;border:0;color:var(--muted);font-size:22px;line-height:1;width:44px;height:44px;margin:-10px -12px -10px 0;cursor:pointer}
+
+/* ---------- impostazioni: pannello dal basso ---------- */
+.velo{position:fixed;inset:0;z-index:40;background:rgba(10,20,28,.45)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);
+  border-radius:20px 20px 0 0;padding:8px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.sheet .in{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.sheet .maniglia{width:40px;height:5px;border-radius:3px;background:var(--line-strong);margin:4px auto 2px}
+.sheet .capo{display:flex;align-items:center;justify-content:space-between}
+.sheet .capo h2{font-size:1.25rem;font-stretch:112%}
+.sheet .chiudi{min-height:44px;padding:0 4px;border:0;background:none;color:var(--accent);font:700 1rem var(--font);cursor:pointer}
+.sheet .panel h3{font-size:1.05rem}
+.campo{display:flex;flex-direction:column;gap:8px}
+.campo + .campo{border-top:1px solid var(--line);padding-top:14px}
+.icone{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.icona{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:var(--ink);font:600 .82rem var(--font);cursor:pointer;padding:4px}
+.icona img{width:72px;height:72px;border-radius:17px;box-shadow:0 0 0 1px var(--line),0 4px 12px -6px rgba(0,0,0,.35)}
+.icona[aria-pressed="true"] img{box-shadow:0 0 0 3px var(--surface),0 0 0 6px var(--accent)}
+.icona[aria-pressed="true"]{color:var(--accent)}
+
 @media (min-width:860px){
-  .wrap{max-width:1120px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:start;gap:20px}
-  h1,.hint{grid-column:1/-1}
-  h1{font-size:2.6rem}
-  .side{position:sticky;top:calc(16px + env(safe-area-inset-top,0px))}
-  .hist{max-height:calc(100vh - 220px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:2px}
+  .wrap{max-width:1120px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);align-items:start;gap:18px}
+  .top,.hint{grid-column:1/-1}
+  h1{font-size:1.7rem}
+  .side{position:sticky;top:calc(14px + env(safe-area-inset-top,0px))}
+  .hist{max-height:calc(100vh - 200px);overflow-y:auto;-webkit-overflow-scrolling:touch}
   .thumb{width:96px;height:96px}
 }
+@media (prefers-reduced-motion:reduce){.check.wait .dot{animation:none}.cattura:active{transform:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Assistente Tecnico</h1>
+  <header class="top">
+    <div class="marchio" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V4h6M22 4h6v6M28 22v6h-6M10 28H4v-6"/><path d="M8 17h4l2-4 3 7 2-4 1.5 2.5L24 12" stroke="#f2a900"/></svg>
+    </div>
+    <div class="titolo">
+      <h1>Assistente Tecnico</h1>
+      <p class="sottotitolo">Diagnosi dei guasti da foto e video</p>
+    </div>
+    <button class="ingranaggio" type="button" id="b-key" aria-label="Impostazioni">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
 
   <div class="hint" id="hint" hidden>
     <p>Per usarla come un'app e non perdere l'archivio: tocca <b>Condividi</b> in Safari, poi <b>Aggiungi alla schermata Home</b>.</p>
@@ -156,19 +266,27 @@ ul.warnlist li::marker{color:var(--warn)}
   </div>
 
   <div class="main">
-  <div class="panel">
-    <div class="row">
-      <button class="btn ghost" type="button" id="b-foto">Foto</button>
-      <button class="btn ghost" type="button" id="b-video">Video</button>
+  <section class="panel" aria-label="Nuova analisi">
+    <div class="mirino">
+      <div class="row">
+        <button class="cattura" type="button" id="b-foto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/></svg>
+          <div><b>Foto</b><span>Scatta o scegli</span></div>
+        </button>
+        <button class="cattura" type="button" id="b-video">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="M15.5 10.5 21 7.5v9l-5.5-3"/></svg>
+          <div><b>Video</b><span>Con audio, fino a 15 s</span></div>
+        </button>
+      </div>
+      <input type="file" id="in-foto" accept="image/*" multiple hidden>
+      <input type="file" id="in-video" accept="video/*" hidden>
+      <div class="thumbs" id="thumbs"></div>
+      <div class="stack" id="media-box" hidden>
+        <p class="check" id="media-st" aria-live="polite"></p>
+        <ul class="errlist" id="media-err"></ul>
+      </div>
     </div>
-    <input type="file" id="in-foto" accept="image/*" multiple hidden>
-    <input type="file" id="in-video" accept="video/*" hidden>
-    <div class="thumbs" id="thumbs"></div>
-    <div class="stack" id="media-box" hidden>
-      <p class="check" id="media-st" aria-live="polite"></p>
-      <ul class="errlist" id="media-err"></ul>
-    </div>
-    <textarea id="desc" aria-label="Descrivi il problema" placeholder="Descrivi il problema: cosa fa, da quando, misure, codici di errore, LED accesi (es. switch, server, PLC)."></textarea>
+    <textarea id="desc" aria-label="Descrivi il problema" placeholder="Cosa succede? Da quando, misure, codici di errore, LED accesi (es. switch, server, PLC)."></textarea>
     <button class="check" type="button" id="gem-st" aria-live="polite"></button>
     <details class="diag" id="diag" hidden>
       <summary>Dettagli del problema</summary>
@@ -177,45 +295,67 @@ ul.warnlist li::marker{color:var(--warn)}
     </details>
     <button class="btn" type="button" id="go">Analizza</button>
     <div class="status" id="st" aria-live="polite"></div>
-    <button class="link" type="button" id="b-man">L'analisi non trova il problema? Registralo a mano</button>
+    <button class="link" type="button" id="b-man">Hai già risolto, o l'analisi non trova il problema? Registralo a mano</button>
     <div class="stack" id="man" hidden>
-      <div class="label">Registrazione manuale</div>
+      <h3>Registrazione manuale</h3>
       <input type="text" id="m-tit" aria-label="Problema" placeholder="Problema (es. Pompa 2 non parte)">
-      <textarea id="m-sol" aria-label="Soluzione" placeholder="Cosa hai fatto per risolverlo?" style="min-height:80px"></textarea>
+      <textarea id="m-sol" aria-label="Soluzione" placeholder="Cosa hai fatto per risolverlo?" style="min-height:84px"></textarea>
       <p class="note">Foto e descrizione inserite sopra vengono salvate insieme.</p>
       <div class="meta"><button class="btn ok small" type="button" id="m-save">Salva in archivio</button><button class="btn ghost small" type="button" id="m-cancel">Annulla</button></div>
     </div>
-  </div>
+  </section>
 
-  <div class="panel" id="res" hidden></div>
+  <section class="panel" id="res" hidden></section>
   </div>
 
   <aside class="side">
-  <div class="panel">
-    <div class="label">Cronologia</div>
-    <p class="status" id="sync"></p>
+  <section class="panel" aria-labelledby="t-cron">
+    <div class="intest"><h2 id="t-cron">Cronologia</h2><p class="status" id="sync"></p></div>
     <div class="hist" id="hist"></div>
-    <div class="meta" style="border-top:1px solid var(--line);padding-top:6px;column-gap:18px">
-      <button class="link" type="button" id="exp">Esporta archivio</button>
-      <button class="link" type="button" id="imp">Importa archivio</button>
-      <button class="link" type="button" id="b-key">Chiavi per l'analisi</button>
-      <input type="file" id="in-imp" accept="application/json,.json" hidden>
-    </div>
-    <div class="stack" id="keybox" hidden>
-      <label class="label" for="key">Chiave Google Gemini</label>
-      <input type="password" id="key" placeholder="Incolla la chiave (inizia con AIza…)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <p class="note">Serve per il tasto Analizza. La crei gratis su aistudio.google.com › Get API key. Resta salvata solo su questo iPhone.</p>
-      <p class="check" id="key-st"></p>
-      <div class="meta"><button class="btn ok small" type="button" id="key-save">Salva e verifica</button><button class="btn ghost small" type="button" id="key-test">Verifica di nuovo</button><button class="btn ghost small" type="button" id="key-del">Rimuovi</button></div>
-
-      <label class="label" for="orkey" style="margin-top:14px">Riserva gratuita: OpenRouter</label>
-      <input type="password" id="orkey" placeholder="Incolla la chiave (inizia con sk-or-…)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <p class="note">Si usa da sola quando Gemini non risponde. Gratis, circa 50 analisi al giorno: crea un account su openrouter.ai › Keys › Create Key. Legge solo immagini: di un video usa alcuni fotogrammi, senza audio. Non inviare foto con dati riservati.</p>
-      <p class="check" id="or-st"></p>
-      <div class="meta"><button class="btn ok small" type="button" id="or-save">Salva e verifica</button><button class="btn ghost small" type="button" id="or-del">Rimuovi</button></div>
-    </div>
-  </div>
+  </section>
   </aside>
+</div>
+
+<div class="velo" id="velo" hidden></div>
+<div class="sheet" id="keybox" hidden role="dialog" aria-modal="true" aria-labelledby="t-imp">
+  <div class="in">
+    <div class="maniglia" aria-hidden="true"></div>
+    <div class="capo"><h2 id="t-imp">Impostazioni</h2><button class="chiudi" type="button" id="sheet-x">Fine</button></div>
+
+    <section class="panel" id="sez-icone" hidden>
+      <h3>Icona dell'app</h3>
+      <div class="icone" id="icone"></div>
+      <p class="status" id="icona-st"></p>
+    </section>
+
+    <section class="panel">
+      <h3>Analisi</h3>
+      <div class="campo">
+        <label class="label" for="key">Chiave Google Gemini</label>
+        <input type="password" id="key" placeholder="Incolla la chiave (inizia con AIza…)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <p class="note">Serve per il tasto Analizza. La crei gratis su aistudio.google.com › Get API key. Resta salvata solo su questo dispositivo.</p>
+        <p class="check" id="key-st"></p>
+        <div class="meta"><button class="btn ok small" type="button" id="key-save">Salva e verifica</button><button class="btn ghost small" type="button" id="key-test">Verifica di nuovo</button><button class="btn ghost small" type="button" id="key-del">Rimuovi</button></div>
+      </div>
+      <div class="campo">
+        <label class="label" for="orkey">Riserva gratuita: OpenRouter</label>
+        <input type="password" id="orkey" placeholder="Incolla la chiave (inizia con sk-or-…)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <p class="note">Si usa da sola quando Gemini non risponde, e per il confronto tra più AI. Gratis, circa 50 richieste al giorno: openrouter.ai › Keys › Create Key. Legge solo immagini: di un video usa alcuni fotogrammi, senza audio. Non inviare foto con dati riservati.</p>
+        <p class="check" id="or-st"></p>
+        <div class="meta"><button class="btn ok small" type="button" id="or-save">Salva e verifica</button><button class="btn ghost small" type="button" id="or-del">Rimuovi</button></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>Archivio</h3>
+      <p class="note">I casi sono salvati su questo dispositivo. Esporta l'archivio per tenerne una copia o per spostarlo su un altro dispositivo; importandolo, i casi uguali non si duplicano.</p>
+      <div class="meta">
+        <button class="btn ghost small" type="button" id="exp">Esporta archivio</button>
+        <button class="btn ghost small" type="button" id="imp">Importa archivio</button>
+        <input type="file" id="in-imp" accept="application/json,.json" hidden>
+      </div>
+    </section>
+  </div>
 </div>
 
 <div class="workbar" id="work" hidden>
@@ -779,16 +919,17 @@ function mostraDiag(msg, det) {
 }
 
 /* indicatore Gemini */
-const setGem = (stato, testo) => { setCheck($("#gem-st"), stato, testo); setCheck($("#key-st"), stato, testo); };
+const setGem = (stato, testo) => setCheck($("#gem-st"), stato, testo);
+const setGemK = (stato, testo) => { setCheck($("#gem-st"), stato, testo); setCheck($("#key-st"), stato, testo); };
 let verificaInCorso = null;
 function verificaGemini() {
-  if (!KEY()) { if (ORKEY()) setGem("warn", "Gemini non impostato: l'analisi userà OpenRouter (solo immagini, senza audio)"); else setGem("off", "Analisi: nessuna chiave inserita, tocca qui per aggiungerla"); return Promise.resolve(false); }
-  if (!navigator.onLine) { setGem("err", "Offline: l'analisi con Gemini non è disponibile"); return Promise.resolve(false); }
+  if (!KEY()) { if (ORKEY()) setGemK("warn", "Gemini non impostato: l'analisi userà OpenRouter (solo immagini, senza audio)"); else setGemK("off", "Analisi: nessuna chiave inserita, tocca qui per aggiungerla"); return Promise.resolve(false); }
+  if (!navigator.onLine) { setGemK("err", "Offline: l'analisi con Gemini non è disponibile"); return Promise.resolve(false); }
   if (verificaInCorso) return verificaInCorso;
-  setGem("wait", "Verifico il collegamento con Gemini…");
+  setGemK("wait", "Verifico il collegamento con Gemini…");
   verificaInCorso = modello(true)
-    .then(m => { setGem("ok", "Gemini collegato e pronto · " + m); return true; })
-    .catch(e => { setGem("err", typeof e === "string" ? e : "Gemini non raggiungibile"); return false; })
+    .then(m => { setGemK("ok", "Gemini collegato e pronto · " + m); return true; })
+    .catch(e => { setGemK("err", typeof e === "string" ? e : "Gemini non raggiungibile"); return false; })
     .finally(() => { verificaInCorso = null; });
   return verificaInCorso;
 }
@@ -864,7 +1005,7 @@ $("#m-save").onclick = async () => {
 /* risultato */
 function mostra(c) {
   const r = c.r || {}, lv = ["basso", "medio", "alto", "critico"].includes(r.rischio) ? r.rischio : "medio";
-  const box = $("#res"); box.hidden = false; fill(box,
+  const box = $("#res"); box.hidden = false; box.dataset.rischio = c.manuale ? "" : (c.conferma?.v?.rischio || lv); fill(box,
     el("div", { class: "meta" }, [el("span", { class: "pill " + c.stato, text: c.stato }), c.manuale ? el("span", { class: "pill", text: "manuale" }) : el("span", { class: "pill " + lv, text: "rischio " + lv }), c.video ? el("span", { class: "pill", text: "video " + c.video }) : null, el("span", { class: "label", text: data(c.creato) })]),
     el("h2", { text: str(r.titolo) || "Diagnosi" }),
     c.foto?.length ? el("div", { class: "thumbs" }, c.foto.map(s => el("div", { class: "thumb" }, el("img", { src: s, alt: "" })))) : null,
@@ -895,7 +1036,7 @@ function chiusura(c) {
 /* cronologia */
 async function lista() {
   const all = await DB.all(), box = $("#hist");
-  if (!all.length) { box.replaceChildren(el("div", { class: "empty", text: "Qui troverai ogni problema analizzato con la sua soluzione." })); return; }
+  if (!all.length) { box.replaceChildren(el("div", { class: "empty", text: "Ancora nessun intervento. Ogni guasto che analizzi o registri compare qui, con la soluzione che ha funzionato." })); return; }
   box.replaceChildren(...all.map(c => el("button", { class: "item", type: "button", onclick: () => mostra(c) }, [
     el("div", {}, [el("b", { text: str(c.r?.titolo) || "Problema" }), el("span", { class: "sub", text: c.stato === "risolto" ? "✓ " + c.risolto : data(c.creato) + (c.desc ? " · " + c.desc : "") })]),
     el("span", { class: "pill " + c.stato, text: c.stato }),
@@ -931,14 +1072,33 @@ $("#in-imp").onchange = async e => {
 
 /* chiave per l'analisi */
 const keyUI = () => { $("#key").value = KEY() ? "••••••••" + KEY().slice(-4) : ""; };
-function apriKey() { $("#keybox").hidden = false; $("#keybox").scrollIntoView({ block: "center" }); }
-$("#b-key").onclick = () => { $("#keybox").hidden = !$("#keybox").hidden; };
+/* icona dell'app (solo nell'app iOS) */
+const ICONE = [["AppIcon", "Ispezione"], ["AppIcon-Notte", "Notte"], ["AppIcon-Quadro", "Quadro"], ["AppIcon-Segnale", "Segnale"], ["AppIcon-Acqua", "Acqua"], ["AppIcon-Sicurezza", "Sicurezza"]];
+let iconaAttuale = window.__APP_ICON__ || "AppIcon";
+function disegnaIcone() {
+  $("#icone").replaceChildren(...ICONE.map(([id, nome]) => el("button", { class: "icona", type: "button", "aria-pressed": String(id === iconaAttuale), "aria-label": "Icona " + nome,
+    onclick: () => { if (id === iconaAttuale) return; $("#icona-st").textContent = "Cambio l'icona…"; nativo({ action: "setIcon", name: id }); } },
+    [el("img", { src: "icone/" + id + ".png", alt: "" }), el("span", { text: nome })])));
+}
+window.onNativeIconChanged = (id, ok) => {
+  if (ok) { iconaAttuale = id; $("#icona-st").textContent = "Icona cambiata."; } else $("#icona-st").textContent = "iOS non ha permesso di cambiare l'icona: riprova.";
+  disegnaIcone();
+};
+if (NATIVA) { $("#sez-icone").hidden = false; disegnaIcone(); }
+
+/* pannello Impostazioni */
+function apriKey() { $("#keybox").hidden = false; $("#velo").hidden = false; document.body.classList.add("sheet-aperto"); $("#keybox").scrollTop = 0; }
+function chiudiKey() { $("#keybox").hidden = true; $("#velo").hidden = true; document.body.classList.remove("sheet-aperto"); }
+$("#b-key").onclick = apriKey;
+$("#sheet-x").onclick = chiudiKey;
+$("#velo").onclick = chiudiKey;
+addEventListener("keydown", e => { if (e.key === "Escape" && !$("#keybox").hidden) chiudiKey(); });
 $("#key").addEventListener("focus", e => { if (e.target.value.startsWith("••")) e.target.value = ""; });
 $("#key-save").onclick = async () => { const k = $("#key").value.trim();
   if (k.startsWith("••")) { verificaGemini(); return; }
-  if (k.length < 20 || /\s/.test(k)) { setGem("err", "La chiave non sembra completa: copiala di nuovo da Google AI Studio"); return; }
+  if (k.length < 20 || /\s/.test(k)) { setGemK("err", "La chiave non sembra completa: copiala di nuovo da Google AI Studio"); return; }
   LS.set("at-key", k); LS.del("at-models"); keyUI(); $("#st").textContent = "";
-  if (await verificaGemini()) setTimeout(() => { $("#keybox").hidden = true; }, 1500); };
+  await verificaGemini(); };
 $("#key-test").onclick = () => verificaGemini();
 $("#key-del").onclick = () => { LS.del("at-key"); LS.del("at-models"); keyUI(); verificaGemini(); };
 keyUI();
