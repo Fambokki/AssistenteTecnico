@@ -234,9 +234,134 @@ body.lavora{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .icona[aria-pressed="true"] img{box-shadow:0 0 0 3px var(--surface),0 0 0 6px var(--accent)}
 .icona[aria-pressed="true"]{color:var(--accent)}
 
+
+/* ================= Liquid Glass (stile iOS 26) =================
+   Vetro traslucido: sfoca e satura ciò che c'è dietro, con riflessi sui bordi.
+   Sotto il vetro, campi di colore morbidi (blu acqua, azzurro, giallo segnale) sul grigio RAL 7035. */
+:root{
+  --glass:rgba(251,252,250,.58);
+  --glass-strong:rgba(251,252,250,.74);
+  --glass-tint:rgba(13,90,158,.80);
+  --glass-edge:rgba(255,255,255,.70);
+  --glass-edge-low:rgba(20,34,44,.07);
+  --glass-shadow:0 10px 30px -12px rgba(20,34,44,.30),0 2px 6px -2px rgba(20,34,44,.10);
+  --blur:saturate(185%) blur(22px);
+}
+@media (prefers-color-scheme: dark){:root{
+  --glass:rgba(34,44,53,.52);
+  --glass-strong:rgba(34,44,53,.72);
+  --glass-tint:rgba(90,168,234,.82);
+  --glass-edge:rgba(255,255,255,.16);
+  --glass-edge-low:rgba(0,0,0,.35);
+  --glass-shadow:0 12px 34px -14px rgba(0,0,0,.8),0 2px 6px -2px rgba(0,0,0,.5);
+}}
+html{background:var(--bg)}
+body{background:transparent;position:relative}
+/* i campi di colore restano fermi mentre la pagina scorre sotto il vetro */
+body::before{content:"";position:fixed;inset:-10vh -10vw;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(38vmax 30vmax at 8% 4%,rgba(13,90,158,.42),transparent 70%),
+    radial-gradient(34vmax 30vmax at 96% 22%,rgba(24,160,201,.34),transparent 72%),
+    radial-gradient(30vmax 26vmax at 18% 78%,rgba(242,169,0,.26),transparent 70%),
+    radial-gradient(36vmax 30vmax at 88% 96%,rgba(0,128,78,.18),transparent 72%),
+    var(--bg)}
+@media (prefers-color-scheme: dark){body::before{
+  background:
+    radial-gradient(40vmax 32vmax at 8% 4%,rgba(30,110,190,.50),transparent 70%),
+    radial-gradient(34vmax 30vmax at 96% 26%,rgba(24,160,201,.30),transparent 72%),
+    radial-gradient(30vmax 26vmax at 16% 80%,rgba(242,169,0,.16),transparent 70%),
+    radial-gradient(36vmax 30vmax at 90% 96%,rgba(0,128,78,.20),transparent 72%),
+    var(--bg)}}
+
+/* materiale vetro con riflesso: un bordo chiaro in alto e un'ombra sottile in basso */
+.panel,.cattura,.hint,.workbar,.sheet .panel,.top,.verdict{
+  background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 0 0 1px var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),var(--glass-shadow)}
+.panel{position:relative;border-radius:24px}
+.panel::before,.top::before,.workbar::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,0) 38%,rgba(255,255,255,0) 72%,rgba(255,255,255,.12));mix-blend-mode:soft-light}
+.panel > *{position:relative}
+
+/* barra del titolo di vetro, sempre visibile mentre scorri */
+.top{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:20;padding:10px 10px 10px 12px;border-radius:22px;margin-top:2px}
+.top{background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:saturate(190%) blur(34px);backdrop-filter:saturate(190%) blur(34px)}
+.top h1{font-size:1.2rem;font-stretch:116%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .sottotitolo{font-size:.8rem;margin-top:1px}
+.top .marchio{width:38px;height:38px}
+/* fascia sotto la barra di stato: il contenuto che scorre passa sotto un vetro */
+body::after{content:"";position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);z-index:19;pointer-events:none;
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);background:color-mix(in srgb,var(--bg) 40%,transparent)}
+.marchio{border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 16px -8px rgba(13,90,158,.8)}
+.ingranaggio{border:0;border-radius:999px;background:var(--glass-strong);box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 0 0 1px var(--glass-edge),0 4px 12px -6px rgba(20,34,44,.35)}
+
+/* mirino: vetro più trasparente dentro il pannello */
+.mirino{--l:28px;border-radius:18px;
+  background:
+    linear-gradient(var(--c),var(--c)) top left/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) top left/var(--s) var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) top right/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) top right/var(--s) var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom left/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom left/var(--s) var(--l) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom right/var(--l) var(--s) no-repeat,
+    linear-gradient(var(--c),var(--c)) bottom right/var(--s) var(--l) no-repeat,
+    color-mix(in srgb,var(--surface-2) 45%,transparent)}
+.cattura{border-radius:16px;background:var(--glass-strong)}
+
+/* campi: vetro chiaro, il blu si accende al tocco */
+input[type=text],input[type=password],textarea{border-radius:16px;border:1px solid var(--glass-edge);background:color-mix(in srgb,var(--surface) 62%,transparent);
+  box-shadow:inset 0 1px 2px var(--glass-edge-low)}
+input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+
+/* pulsanti a capsula: il principale è vetro colorato, gli altri vetro chiaro */
+.btn{border-radius:999px;position:relative;overflow:hidden}
+.btn:not(.ghost){background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 86%,#fff),var(--accent));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 6px rgba(0,0,0,.12),0 10px 22px -10px color-mix(in srgb,var(--accent) 80%,transparent)}
+.btn.ok{background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 84%,#fff),var(--ok));box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 18px -10px var(--ok)}
+.btn.ghost{border:0;background:var(--glass-strong);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 0 0 1px var(--glass-edge),0 4px 12px -8px rgba(20,34,44,.35)}
+.btn:active{transform:scale(.98)}
+
+/* etichette a capsula traslucide */
+.pill{background:color-mix(in srgb,var(--surface) 55%,transparent);box-shadow:inset 0 0 0 1px var(--glass-edge)}
+
+/* rapporto: il colore del rischio diventa un alone sul bordo superiore del vetro */
+#res{border-top:0;overflow:hidden}
+#res::after{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:var(--line-strong);pointer-events:none}
+#res[data-rischio="basso"]::after{background:var(--ok)}
+#res[data-rischio="medio"]::after{background:var(--warn-fill)}
+#res[data-rischio="alto"]::after,#res[data-rischio="critico"]::after{background:var(--crit)}
+.safety,.real{border-radius:16px}
+.learn{border-radius:16px;background:color-mix(in srgb,var(--ink) 88%,transparent);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.verdict{border-radius:20px;box-shadow:inset 0 0 0 2px var(--accent),var(--glass-shadow)}
+.diag{border-radius:16px;background:color-mix(in srgb,var(--surface-2) 55%,transparent)}
+.thumb{border-radius:12px}
+
+/* barra di avanzamento: capsula di vetro sospesa in basso */
+.workbar{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  border:0;border-radius:26px;padding:10px 10px 10px 16px;
+  background:color-mix(in srgb,var(--warn-bg) 62%,transparent);
+  box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 0 0 1px color-mix(in srgb,var(--warn-fill) 55%,transparent),0 16px 36px -14px rgba(20,34,44,.45)}
+.workbar .btn{background:var(--glass-strong)}
+
+/* impostazioni: lastra di vetro dal basso */
+.velo{background:rgba(10,20,28,.28);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet{background:color-mix(in srgb,var(--bg) 70%,transparent);-webkit-backdrop-filter:saturate(180%) blur(30px);backdrop-filter:saturate(180%) blur(30px);
+  border-radius:30px 30px 0 0;box-shadow:inset 0 1px 0 var(--glass-edge),0 -12px 40px rgba(0,0,0,.25)}
+.sheet .panel{border-radius:22px}
+.icona img{border-radius:18px}
+
+/* chi preferisce meno trasparenza (Impostazioni iOS › Accessibilità) vede superfici piene */
+@media (prefers-reduced-transparency: reduce){
+  .panel,.cattura,.hint,.workbar,.top,.sheet,.btn.ghost,.verdict{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
+  body::before{background:var(--bg)}
+  .panel::before,.top::before,.workbar::before{display:none}
+}
+
 @media (min-width:860px){
   .wrap{max-width:1120px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);align-items:start;gap:18px}
   .top,.hint{grid-column:1/-1}
+  .side{top:calc(env(safe-area-inset-top,0px) + 92px)}
   h1{font-size:1.7rem}
   .side{position:sticky;top:calc(14px + env(safe-area-inset-top,0px))}
   .hist{max-height:calc(100vh - 200px);overflow-y:auto;-webkit-overflow-scrolling:touch}
