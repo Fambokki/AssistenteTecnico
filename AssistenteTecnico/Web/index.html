@@ -409,7 +409,7 @@ input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(-
       </div>
     </div>
     <textarea id="desc" aria-label="Descrivi il problema" placeholder="Cosa succede? Da quando, misure, codici di errore, LED accesi (es. switch, server, PLC)."></textarea>
-    <button class="check" type="button" id="gem-st" aria-live="polite"></button>
+    <p class="check" id="gem-st" role="status" aria-live="polite"></p>
     <details class="diag" id="diag" hidden>
       <summary>Dettagli del problema</summary>
       <dl class="kv" id="diag-kv"></dl>
@@ -682,7 +682,7 @@ Rispondi SOLO con JSON:
 {"titolo":"nome breve del problema","problema":"2-3 frasi su cosa sta succedendo","rischio":"basso"|"medio"|"alto"|"critico","sicurezza":"precauzioni prima di intervenire, 1-2 frasi","causa":"causa più probabile e perché","soluzione":["passo 1","passo 2","..."],"impara":"il principio tecnico da capire, 2-3 frasi"}`;
 const KEY = () => LS.get("at-key");
 const API = "https://generativelanguage.googleapis.com/v1beta/";
-const CHIAVE_KO = "Chiave Gemini non valida: tocca qui per controllarla";
+const CHIAVE_KO = "Chiave Gemini non valida: controllala nelle Impostazioni (ingranaggio in alto)";
 const pausa = ms => new Promise(r => setTimeout(r, ms));
 // modelli Gemini adatti, dal più recente: prima i Flash, poi i Flash-Lite (meno richiesti: utili se gli altri sono sovraccarichi)
 async function modelli(forza) {
@@ -1045,7 +1045,7 @@ const setGem = (stato, testo) => setCheck($("#gem-st"), stato, testo);
 const setGemK = (stato, testo) => { setCheck($("#gem-st"), stato, testo); setCheck($("#key-st"), stato, testo); };
 let verificaInCorso = null;
 function verificaGemini() {
-  if (!KEY()) { if (ORKEY()) setGemK("warn", "Gemini non impostato: l'analisi userà OpenRouter (solo immagini, senza audio)"); else setGemK("off", "Analisi: nessuna chiave inserita, tocca qui per aggiungerla"); return Promise.resolve(false); }
+  if (!KEY()) { if (ORKEY()) setGemK("warn", "Gemini non impostato: l'analisi userà OpenRouter (solo immagini, senza audio)"); else setGemK("off", "Analisi: nessuna chiave inserita. Aggiungila nelle Impostazioni (ingranaggio in alto)"); return Promise.resolve(false); }
   if (!navigator.onLine) { setGemK("err", "Offline: l'analisi con Gemini non è disponibile"); return Promise.resolve(false); }
   if (verificaInCorso) return verificaInCorso;
   setGemK("wait", "Verifico il collegamento con Gemini…");
@@ -1055,7 +1055,6 @@ function verificaGemini() {
     .finally(() => { verificaInCorso = null; });
   return verificaInCorso;
 }
-$("#gem-st").onclick = () => { if (!KEY() || $("#gem-st").classList.contains("err")) apriKey(); else verificaGemini(); };
 addEventListener("online", verificaGemini); addEventListener("offline", verificaGemini);
 // in archivio: anteprima del video + fino a 3 foto, ridotte
 const piccole = async () => { const imgs = await Promise.all(foto.slice(0, video?.poster ? 2 : 3).map(f => new Promise(ok => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = f.src; })));
@@ -1067,7 +1066,7 @@ $("#go").onclick = async () => {
   $("#st").textContent = "";
   if (lavori) { $("#st").textContent = "Aspetta che foto e video finiscano di caricarsi."; return; }
   if (!desc && !foto.length && !video) { $("#st").textContent = "Aggiungi una foto, un video o una descrizione."; return; }
-  if (!KEY() && !ORKEY()) { verificaGemini(); apriKey(); return; }
+  if (!KEY() && !ORKEY()) { verificaGemini(); return; }
   if (!navigator.onLine) { verificaGemini(); $("#st").textContent = "Se l'hai già risolto, puoi registrarlo a mano."; return; }
   const inviati = cosa(), conVideo = !!video, t0 = Date.now();
   let fase = "prepara", pct = 0, chi = KEY() ? "Gemini" : "OpenRouter", info = "";
